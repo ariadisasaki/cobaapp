@@ -15,6 +15,7 @@ let calibrating = false;
 let currentLat = 0;
 let currentLon = 0;
 let lastPathUpdate = 0;
+let manualOffset = 0;
 
 // ================= KONSTANTA =================
 const rad = Math.PI/180;
@@ -428,7 +429,7 @@ function updateAR(alpha, beta, gamma){
     smoothY = height/2;
   }
 
-  const heading = (360 - alpha + headingOffset) % 360;
+  const heading = (360 - alpha + headingOffset + manualOffset) % 360;
   const pitch = beta || 0;
   const roll  = gamma || 0;
 
@@ -440,19 +441,23 @@ function updateAR(alpha, beta, gamma){
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
 
-  deltaAz  = Math.max(-45, Math.min(45, deltaAz));
-  deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
+  deltaAz  = Math.max(-30, Math.min(30, deltaAz));
+  deltaAlt = Math.max(-20, Math.min(20, deltaAlt));
 
   // target posisi marker di layar
-  let targetX = width/2 + deltaAz * 2 + roll*0.5;
-  let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
+  // 🔹 Skala berdasarkan FOV kamera (lebih realistis)
+  const scaleX = width / 90;   // horizontal ~90°
+  const scaleY = height / 60;  // vertical ~60°
+  
+  let targetX = width/2 + deltaAz * scaleX + roll * 0.3;
+  let targetY = height/2 - deltaAlt * scaleY - pitch * 0.2;
 
   targetX = Math.max(30, Math.min(width-30, targetX));
   targetY = Math.max(40, Math.min(height-40, targetY));
 
   // smoothing
-  smoothX += (targetX - smoothX) * 0.08;
-  smoothY += (targetY - smoothY) * 0.06;
+  smoothX += (targetX - smoothX) * 0.15;
+  smoothY += (targetY - smoothY) * 0.12;
 
   // update posisi marker
   marker.style.left = smoothX + "px";
@@ -486,9 +491,9 @@ function updateAR(alpha, beta, gamma){
   path.forEach(p=>{
     const dot = document.createElement("div");
     dot.className = "hilal-path-dot";
-
-    const dx = (p.azi - heading) * 2;
-    const dy = (p.alt - pitch) * -2;
+    
+    const dx = (p.azi - heading) * scaleX;
+    const dy = (p.alt - pitch) * -scaleY;
 
     dot.style.left = (width/2 + dx) + "px";
     dot.style.top  = (height/2 + dy) + "px";
@@ -504,12 +509,18 @@ function calibrateCompass(){
   calibrating = true;
   let samples = [];
 
-  const handler = (e)=>{
-    samples.push(e.alpha);
+  alert("Gerakkan HP membentuk angka 8 selama beberapa detik 🧭");
 
-    if(samples.length > 20){
+  const handler = (e)=>{
+    if(e.alpha !== null){
+      samples.push(e.alpha);
+    }
+
+    if(samples.length > 50){
       let avg = samples.reduce((a,b)=>a+b)/samples.length;
+
       headingOffset = 360 - avg;
+
       calibrating = false;
       window.removeEventListener("deviceorientation", handler);
 
