@@ -27,7 +27,7 @@ window.onload = () => {
   getLocation();
   initSensor();
 
-  // Tombol Kalibrasi Kompas
+  // ================= TOMBOL KALIBRASI =================
   const calibBtn = document.getElementById("calibrateBtn");
   if(calibBtn){
     calibBtn.addEventListener("click", ()=>{
@@ -35,22 +35,49 @@ window.onload = () => {
     });
   }
 
-  // Notifikasi & audio aktif otomatis saat klik pertama
+  // ================= TOMBOL START AR =================
+  const startBtn = document.getElementById("startARBtn");
+  if(startBtn){
+    startBtn.addEventListener("click", async ()=>{
+      
+      // 🔊 Aktifkan audio
+      if(!audioCtx){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        console.log("Audio aktif");
+      }
+
+      // 🔔 Aktifkan notifikasi
+      if(Notification.permission === "default"){
+        try{
+          const p = await Notification.requestPermission();
+          if(p === "granted"){
+            showNotif("Hilal Checker", "Notifikasi aktif 🌙");
+          }
+        }catch(e){
+          console.log("Notif gagal:", e);
+        }
+      }
+
+      // 📷 Aktifkan kamera (WAJIB dari klik user)
+      startCam();
+
+      // UI status
+      const arStatus = document.getElementById("arStatus");
+      if(arStatus){
+        arStatus.innerText = "Kamera aktif ✅";
+      }
+    });
+  }
+
+  // ================= FALLBACK INTERAKSI PERTAMA =================
   document.body.addEventListener("click", () => {
     if(!audioCtx){
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      console.log("Audio aktif");
-    }
-
-    if(Notification.permission === "default"){
-      Notification.requestPermission().then(p=>{
-        if(p==="granted"){
-          showNotif("Hilal Checker", "Notifikasi aktif 🌙");
-        }
-      });
+      console.log("Audio aktif (fallback)");
     }
   }, { once:true });
 };
+
 // ================= JAM =================
 function startClock(){
   setInterval(()=>{
