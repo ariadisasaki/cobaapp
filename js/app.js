@@ -109,7 +109,7 @@ function getHijri(lat, lon){
 
   const bulan = ["Muharram","Safar","Rabiul Awal","Rabiul Akhir","Jumadil Awal","Jumadil Akhir",
                  "Rajab","Syaban","Ramadhan","Syawal","Zulkaidah","Zulhijjah"];
-  document.getElementById('hijri').innerText = `🕌 ${d} ${bulan[hijriMonthIndex]} ${y} H`;
+  document.getElementById('hijri').innerText = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 }
 
 // ================= GPS =================
