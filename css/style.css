@@ -70,15 +70,16 @@ body{
 video{
   width:100%;
   height:220px;
-  object-fit:cover;
+  object-fit:contain;
+  background:black;
   border-radius:15px;
   display:block;
-  z-index:1;
 }
 .camera-wrapper{
   position: relative;
   overflow: hidden;
   border-radius:15px;
+  background:black;
 }
 
 /* MARKER */
