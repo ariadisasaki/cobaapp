@@ -1,3 +1,4 @@
+/* ================= GLOBAL ================= */
 body{
   margin:0;
   font-family:'Poppins',sans-serif;
@@ -15,7 +16,7 @@ body{
   padding:10px;
 }
 
-/* CARD */
+/* ================= CARD ================= */
 .card{
   background: rgba(255,255,255,0.08);
   border-radius:20px;
@@ -32,7 +33,7 @@ body{
   to{opacity:1; transform:translateY(0);}
 }
 
-/* DATA GRID */
+/* ================= DATA GRID ================= */
 .data-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -47,14 +48,13 @@ body{
 }
 .full-width{
   grid-column: span 2;
-  text-align:center;
 }
 .highlight{
   font-size:16px;
   font-weight:600;
 }
 
-/* STATUS */
+/* ================= STATUS ================= */
 .status{
   text-align:center;
   font-size:16px;
@@ -66,7 +66,7 @@ body{
 .status.ok{ background:#1f8f4e; }
 .status.no{ background:#8f1f1f; }
 
-/* CAMERA WRAPPER */
+/* ================= CAMERA ================= */
 .camera-wrapper{
   position: relative;
   overflow: hidden;
@@ -77,7 +77,7 @@ body{
 video{
   width:100%;
   height:220px;
-  object-fit:cover; /* bisa diganti contain kalau mau lebih akurat */
+  object-fit: contain; /* 🔥 lebih akurat dari cover */
   border-radius:15px;
   display:block;
   z-index:1;
@@ -97,16 +97,21 @@ video{
   z-index:2;
 }
 
-/* CROSSHAIR (SUDAH BENAR) */
-#crosshair {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* ================= CROSSHAIR ================= */
+#crosshair{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%, -50%);
+  width:22px;
+  height:22px;
+  border:2px solid cyan;
+  border-radius:50%;
   z-index:5;
+  box-shadow:0 0 10px cyan;
 }
 
-/* MARKER (FIX UTAMA DI SINI) */
+/* ================= MARKER ================= */
 #marker{
   position:absolute;
   font-size:30px;
@@ -121,12 +126,12 @@ video{
   background: transparent !important;
   border: none !important;
   filter: drop-shadow(0 0 6px currentColor);
-  transition: color 0.2s ease;
 
+  transition: color 0.2s ease;
   will-change: transform;
 }
 
-/* HILAL PATH DOT (FIX CENTER JUGA) */
+/* ================= HILAL PATH ================= */
 .hilal-path-dot{
   position:absolute;
   width:6px;
@@ -136,11 +141,24 @@ video{
   pointer-events:none;
   z-index:3;
 
-  /* 🔥 FIX */
   transform: translate(-50%, -50%);
 }
 
-/* AR STATUS */
+/* ================= AR OVERLAY ================= */
+.ar-overlay{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  color:#fff;
+  background:rgba(0,0,0,0.4);
+  padding:4px 8px;
+  border-radius:6px;
+  font-weight:600;
+  font-size:14px;
+  pointer-events:none;
+  z-index:6;
+}
+
 .ar-status{
   position:absolute;
   bottom:10px;
@@ -150,24 +168,10 @@ video{
   padding:6px 12px;
   border-radius:10px;
   font-size:13px;
-  z-index:5;
+  z-index:6;
 }
 
-/* OVERLAY INFO */
-.ar-overlay {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  background: rgba(0,0,0,0.3);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 14px;
-  pointer-events: none;
-}
-
-/* BUTTON */
+/* ================= BUTTON ================= */
 button{
   width:100%;
   padding:12px;
@@ -187,7 +191,7 @@ button:hover{ filter:brightness(1.1); }
   background:linear-gradient(135deg,#ff7b00,#ffd700);
 }
 
-/* SPLASH */
+/* ================= SPLASH ================= */
 #splash{
   position:fixed;
   top:0;
@@ -227,7 +231,7 @@ button:hover{ filter:brightness(1.1); }
 }
 @keyframes spin{ to{transform:rotate(360deg);} }
 
-/* FOOTER */
+/* ================= FOOTER ================= */
 .footer{
   text-align:center;
   font-size:14px;
@@ -240,7 +244,7 @@ button:hover{ filter:brightness(1.1); }
   font-weight:600;
 }
 
-/* FALLBACK LOGO */
+/* ================= FALLBACK LOGO ================= */
 .logo-fallback{
   font-size:40px;
   display:none;
