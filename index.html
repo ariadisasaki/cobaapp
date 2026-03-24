@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hilal Checker</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0b1a3a">
+</head>
+
+<body>
+
+  <!-- SPLASH -->
+  <div id="splash">
+    <div class="splash-content">
+      <img src="assets/icon-512.png" class="logo" onerror="this.style.display='none'">
+      <div class="logo-fallback">🌙</div>
+      <h3>Hilal Checker</h3>
+      <div class="loader"></div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>🌙 Hilal Checker</h1>
+    <p>Accurate Crescent Moon Tracker</p>
+  </div>
+
+  <!-- CONTAINER -->
+  <div class="container">
+
+    <!-- WAKTU -->
+    <div class="card">
+      <h3>⏰ Tanggal dan Waktu</h3>
+      <p id="waktu">Memuat...</p>
+      <p id="hijri">🕌 Memuat...</p>
+    </div>
+
+    <!-- LOKASI -->
+    <div class="card">
+      <h3>📍 Lokasi</h3>
+      <p id="loc">Memuat...</p>
+      <p id="lokasi">Memuat...</p>
+    </div>
+
+    <!-- DATA HILAL -->
+    <div class="card">
+      <h3>🌙 Data Hilal</h3>
+      <div class="data-grid">
+        <div class="data-box">Altitude<br><span id="alt">0.00</span>°</div>
+        <div class="data-box">Azimuth<br><span id="azi">0.00</span>°</div>
+        <div class="data-box">Elongasi<br><span id="elo">0.00</span>°</div>
+        <div class="data-box">Umur<br><span id="age">0.0</span> jam</div>
+      </div>
+    </div>
+
+    <!-- STATUS HILAL -->
+    <div class="card">
+      <h3>📊 Status Hilal</h3>
+      <div id="status" class="status">Memuat...</div>
+      <div id="prediksi" class="status">Memuat...</div>
+    </div>
+
+    <!-- POSISI HILAL (AR) -->
+    <div class="card">
+      <h3>📷 Posisi Hilal</h3>
+      <div class="camera-wrapper">
+        <video id="cam" autoplay playsinline></video>
+        <div class="grid"></div>
+        <div id="marker">🌙</div>
+        <!-- Overlay AR -->
+        <div id="arAzimuth" class="ar-overlay" style="top:5px;">Azimuth: 0°</div>
+        <div id="arAltitude" class="ar-overlay" style="top:30px;">Altitude: 0°</div>
+        <div class="crosshair"></div>
+        <div id="arStatus" class="ar-status">Mencari...</div>
+      </div>
+      <button id="startARBtn">▶️ Mulai Kamera & Audio</button>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      Developed by 
+      <a href="https://www.facebook.com/share/1C8bjd7Xoh" target="_blank">
+        Ariadi Forester
+      </a>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT UTAMA -->
+  <script src="js/app.js"></script>
+
+  <script>
+    // AR Button fallback (jika user belum klik layar)
+    document.getElementById("startARBtn").addEventListener("click", ()=>{
+      if(!audioCtx){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        console.log("Audio diaktifkan oleh user");
+      }
+      document.getElementById("arStatus").innerText = "Kamera & Audio siap digunakan";
+    });
+
+    // SPLASH AUTO HIDE
+    window.addEventListener("load", ()=>{
+      setTimeout(()=>{
+        document.getElementById("splash").style.opacity="0";
+        setTimeout(()=>{
+          document.getElementById("splash").style.display="none";
+        },500);
+      },2000);
+    });
+
+    // REGISTER SERVICE WORKER (PWA)
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+
+</body>
+</html>
