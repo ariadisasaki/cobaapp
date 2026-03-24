@@ -87,9 +87,13 @@ video{
   font-size:30px;
   z-index:4;
   pointer-events:none;
-  transform: translate(0,0);
+
+  /* 🔥 INI KUNCI UTAMA */
+  transform: translate(-50%, -50%);
+
   left:0;
   top:0;
+
   background: transparent !important;
   border: none !important;
   filter: drop-shadow(0 0 6px currentColor);
