@@ -1,0 +1,267 @@
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background: radial-gradient(circle at top, #0b1a3a, #020611);
+  background-attachment: fixed;
+  color:#fff;
+}
+
+/* ================= HEADER ================= */
+.header{
+  text-align:center;
+  padding:10px 0;
+}
+
+.container{
+  padding:10px;
+}
+
+/* ================= CARD ================= */
+.card{
+  background: rgba(255,255,255,0.08);
+  border-radius:20px;
+  padding:12px;
+  margin-bottom:8px;
+  box-shadow:0 5px 20px rgba(0,0,0,0.3);
+  text-align:center;
+  position:relative;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn{
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* ================= DATA ================= */
+.data-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+
+.data-box{
+  background: rgba(255,255,255,0.05);
+  padding:8px;
+  border-radius:12px;
+  text-align:center;
+}
+
+.highlight{
+  font-size:16px;
+  font-weight:600;
+}
+
+/* ================= STATUS ================= */
+.status{
+  text-align:center;
+  font-size:16px;
+  font-weight:600;
+  padding:8px;
+  border-radius:12px;
+  margin-top:5px;
+}
+
+.status.ok{ background:#1f8f4e; }
+.status.no{ background:#8f1f1f; }
+
+/* ================= VIDEO / CAMERA ================= */
+video{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+  border-radius:15px;
+  display:block;
+  z-index:1;
+}
+
+.camera-wrapper{
+  position: relative;
+  overflow: hidden; /* marker tidak keluar */
+  border-radius:15px;
+}
+
+.camera-wrapper video{
+  width:100%;
+  height:220px;
+  object-fit:cover;
+  display:block;
+}
+
+/* ================= MARKER (FIXED FINAL) ================= */
+#marker{
+  position:absolute;
+  font-size:30px;
+  z-index:4;
+  pointer-events:none;
+
+  transform: translate(0,0); /* ðŸ”¥ HAPUS -50% */
+  left:0;
+  top:0;
+
+  background: transparent !important;
+  border: none !important;
+
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+#marker{
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+/* ================= CROSSHAIR ================= */
+.crosshair{
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:20px;
+  height:20px;
+  transform:translate(-50%,-50%);
+  border:2px solid #00c6ff;
+  border-radius:50%;
+  z-index:3;
+  pointer-events:none;
+}
+
+/* ================= GRID RADAR ================= */
+.grid{
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:0;
+  left:0;
+  background:
+    linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index:2;
+}
+
+/* ================= STATUS AR ================= */
+.ar-status{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.6);
+  padding:6px 12px;
+  border-radius:10px;
+  font-size:13px;
+  z-index:5;
+}
+
+.ar-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ================= BUTTON ================= */
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#3a7bfd,#00c6ff);
+  color:#fff;
+  font-weight:600;
+  margin-top:8px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+  transition:0.2s;
+}
+
+button:active{
+  transform:scale(0.97);
+}
+
+/* ================= SPLASH ================= */
+#splash{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#020611;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  transition:0.5s;
+}
+
+.splash-content{
+  text-align:center;
+}
+
+.logo{
+  width:180px;
+  max-width:40%;
+  margin-bottom:10px;
+  animation:zoomIn 0.8s ease;
+  filter: drop-shadow(0 0 10px rgba(0,198,255,0.6));
+}
+
+@keyframes zoomIn{
+  from{
+    transform:scale(0.7);
+    opacity:0;
+  }
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+/* ================= LOADER ================= */
+.loader{
+  width:40px;
+  height:40px;
+  border:4px solid rgba(255,255,255,0.2);
+  border-top:4px solid #3a7bfd;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:10px auto;
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+/* ================= FOOTER ================= */
+.footer{
+  text-align:center;
+  font-size:14px;
+  margin-top:15px;
+  opacity:0.7;
+}
+
+.footer a{
+  color:#00c6ff;
+  text-decoration:none;
+  font-weight:600;
+}
+
+/* fallback logo */
+.logo-fallback{
+  font-size:40px;
+  display:none;
+}
+
+.logo:invalid + .logo-fallback,
+.logo[style*="display: none"] + .logo-fallback{
+  display:block;
+}
