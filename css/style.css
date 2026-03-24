@@ -145,6 +145,22 @@ video{
   pointer-events: none;
 }
 
+#calibrateBtn{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#ff7b00,#ffd700);
+  color:#fff;
+  font-weight:600;
+  margin-top:8px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.3);
+  transition:0.2s;
+}
+#calibrateBtn:active{
+  transform:scale(0.97);
+}
+
 /* BUTTON */
 button{
   width:100%;
