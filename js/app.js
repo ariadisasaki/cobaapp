@@ -475,8 +475,8 @@ function updateAR(alpha, beta, gamma){
   }
 
   // 🔹 Update overlay AR untuk azimuth & altitude hilal
-  if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
-  if(altEl) altEl.innerText = `Altitude: ${hilalData.alt.toFixed(2)}°`;
+  if(azEl) azEl.innerText = `Azimuth Bulan: ${hilalData.azi.toFixed(2)}°`;
+  if(altEl) altEl.innerText = `Tinggi Bulan: ${hilalData.alt.toFixed(2)}°`;
 
   if(Date.now() - lastPathUpdate > 2000){
   lastPathUpdate = Date.now();
