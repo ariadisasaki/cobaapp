@@ -1,9 +1,7 @@
-/* ================= GLOBAL ================= */
 body{
   margin:0;
   font-family:'Poppins',sans-serif;
   background: radial-gradient(circle at top, #0b1a3a, #020611);
-  background-attachment: fixed;
   color:#fff;
 }
 
@@ -12,64 +10,51 @@ body{
   text-align:center;
   padding:10px 0;
 }
+
+/* CONTAINER */
 .container{
   padding:10px;
 }
 
-/* ================= CARD ================= */
+/* CARD */
 .card{
   background: rgba(255,255,255,0.08);
   border-radius:20px;
   padding:12px;
-  margin-bottom:8px;
+  margin-bottom:10px;
   box-shadow:0 5px 20px rgba(0,0,0,0.3);
   text-align:center;
-  position:relative;
-  animation: fadeIn 0.5s ease;
 }
 
-@keyframes fadeIn{
-  from{opacity:0; transform:translateY(10px);}
-  to{opacity:1; transform:translateY(0);}
-}
-
-/* ================= DATA GRID ================= */
+/* GRID DATA */
 .data-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:8px;
-  margin-top:10px;
 }
 .data-box{
   background: rgba(255,255,255,0.05);
   padding:8px;
   border-radius:12px;
-  text-align:center;
 }
 .full-width{
   grid-column: span 2;
 }
-.highlight{
-  font-size:16px;
-  font-weight:600;
-}
 
-/* ================= STATUS ================= */
+/* STATUS */
 .status{
-  text-align:center;
-  font-size:16px;
-  font-weight:600;
   padding:8px;
   border-radius:12px;
   margin-top:5px;
+  font-weight:600;
 }
 .status.ok{ background:#1f8f4e; }
 .status.no{ background:#8f1f1f; }
 
-/* ================= CAMERA ================= */
+/* CAMERA */
 .camera-wrapper{
-  position: relative;
-  overflow: hidden;
+  position:relative;
+  overflow:hidden;
   border-radius:15px;
 }
 
@@ -77,13 +62,10 @@ body{
 video{
   width:100%;
   height:220px;
-  object-fit: contain; /* 🔥 lebih akurat dari cover */
-  border-radius:15px;
-  display:block;
-  z-index:1;
+  object-fit:cover;
 }
 
-/* GRID RADAR */
+/* GRID */
 .grid{
   position:absolute;
   width:100%;
@@ -93,72 +75,55 @@ video{
   background:
     linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-size:40px 40px;
   z-index:2;
 }
 
-/* ================= CROSSHAIR ================= */
+/* MARKER (FIX UTAMA) */
+#marker{
+  position:absolute;
+  font-size:30px;
+  z-index:4;
+  transform: translate(-50%, -50%);
+  pointer-events:none;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* CROSSHAIR */
 #crosshair{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%, -50%);
-  width:22px;
-  height:22px;
-  border:2px solid cyan;
-  border-radius:50%;
+  font-size:20px;
   z-index:5;
-  box-shadow:0 0 10px cyan;
+  opacity:0.7;
 }
 
-/* ================= MARKER ================= */
-#marker{
-  position:absolute;
-  font-size:30px;
-  z-index:4;
-  pointer-events:none;
-
-  /* 🔥 FIX CENTER */
-  transform: translate(-50%, -50%);
-  left:0;
-  top:0;
-
-  background: transparent !important;
-  border: none !important;
-  filter: drop-shadow(0 0 6px currentColor);
-
-  transition: color 0.2s ease;
-  will-change: transform;
-}
-
-/* ================= HILAL PATH ================= */
+/* PATH DOT */
 .hilal-path-dot{
   position:absolute;
   width:6px;
   height:6px;
   border-radius:50%;
   background:rgba(0,198,255,0.7);
-  pointer-events:none;
-  z-index:3;
-
   transform: translate(-50%, -50%);
+  z-index:3;
 }
 
-/* ================= AR OVERLAY ================= */
+/* OVERLAY */
 .ar-overlay{
   position:absolute;
   left:50%;
   transform:translateX(-50%);
-  color:#fff;
   background:rgba(0,0,0,0.4);
   padding:4px 8px;
-  border-radius:6px;
-  font-weight:600;
+  border-radius:5px;
   font-size:14px;
-  pointer-events:none;
-  z-index:6;
+  z-index:5;
 }
 
+/* STATUS AR */
 .ar-status{
   position:absolute;
   bottom:10px;
@@ -168,10 +133,10 @@ video{
   padding:6px 12px;
   border-radius:10px;
   font-size:13px;
-  z-index:6;
+  z-index:5;
 }
 
-/* ================= BUTTON ================= */
+/* BUTTON */
 button{
   width:100%;
   padding:12px;
@@ -181,17 +146,13 @@ button{
   color:#fff;
   font-weight:600;
   margin-top:8px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
-  transition:0.2s;
 }
-button:active{ transform:scale(0.97); }
-button:hover{ filter:brightness(1.1); }
 
 #calibrateBtn{
   background:linear-gradient(135deg,#ff7b00,#ffd700);
 }
 
-/* ================= SPLASH ================= */
+/* SPLASH */
 #splash{
   position:fixed;
   top:0;
@@ -203,53 +164,15 @@ button:hover{ filter:brightness(1.1); }
   align-items:center;
   justify-content:center;
   z-index:9999;
-  transition:0.5s;
 }
-.splash-content{text-align:center;}
 
 .logo{
-  width:180px;
-  max-width:40%;
-  margin-bottom:10px;
-  animation:zoomIn 0.8s ease;
-  filter: drop-shadow(0 0 10px rgba(0,198,255,0.6));
+  width:150px;
 }
 
-@keyframes zoomIn{
-  from{ transform:scale(0.7); opacity:0; }
-  to{ transform:scale(1); opacity:1; }
-}
-
-.loader{
-  width:40px;
-  height:40px;
-  border:4px solid rgba(255,255,255,0.2);
-  border-top:4px solid #3a7bfd;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-  margin:10px auto;
-}
-@keyframes spin{ to{transform:rotate(360deg);} }
-
-/* ================= FOOTER ================= */
+/* FOOTER */
 .footer{
   text-align:center;
-  font-size:14px;
-  margin-top:15px;
+  margin-top:10px;
   opacity:0.7;
-}
-.footer a{
-  color:#00c6ff;
-  text-decoration:none;
-  font-weight:600;
-}
-
-/* ================= FALLBACK LOGO ================= */
-.logo-fallback{
-  font-size:40px;
-  display:none;
-}
-.logo:invalid + .logo-fallback,
-.logo[style*="display: none"] + .logo-fallback{
-  display:block;
 }
