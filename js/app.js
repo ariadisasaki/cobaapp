@@ -223,7 +223,6 @@ function hitungHilalFuture(lat, lon, time){
 }
 
 // ================= HITUNG HILAL CORE =================
-// ================= HITUNG HILAL CORE =================
 function hitungHilalCore(lat, lon, customTime=null){
   const rad = Math.PI/180;
   const deg = 180/Math.PI;
