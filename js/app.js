@@ -26,6 +26,14 @@ window.onload = () => {
   getLocation();
   initSensor();
 
+  // Tombol Kalibrasi Kompas
+  const calibBtn = document.getElementById("calibrateBtn");
+  if(calibBtn){
+    calibBtn.addEventListener("click", ()=>{
+      calibrateCompass();
+    });
+  }
+
   // Notifikasi & audio aktif otomatis saat klik pertama
   document.body.addEventListener("click", () => {
     if(!audioCtx){
@@ -42,7 +50,6 @@ window.onload = () => {
     }
   }, { once:true });
 };
-
 // ================= JAM =================
 function startClock(){
   setInterval(()=>{
