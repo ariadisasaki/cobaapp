@@ -26,19 +26,18 @@ const deg = 180/Math.PI;
 // ================= INIT =================
 window.onload = () => {
   startClock();
-  getLocation();
-  initSensor();
+  getLocation();   // 🔥 ini sudah handle GPS + kamera
+  initSensor();    // 🔥 sensor AR
 
-  // Tombol Kalibrasi Kompas
+  // tombol kalibrasi
   const calibBtn = document.getElementById("calibrateBtn");
   if(calibBtn){
-    calibBtn.addEventListener("click", ()=>{
-      calibrateCompass();
-    });
+    calibBtn.addEventListener("click", calibrateCompass);
   }
 
-  // Notifikasi & audio aktif otomatis saat klik pertama
+  // aktifkan audio + notif saat klik pertama
   document.body.addEventListener("click", () => {
+
     if(!audioCtx){
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       console.log("Audio aktif");
@@ -51,6 +50,7 @@ window.onload = () => {
         }
       });
     }
+
   }, { once:true });
 };
 
@@ -596,9 +596,3 @@ function showNotif(judul,pesan){
     new Notification(judul,{body:pesan,icon:"assets/icon-192.png"});
   }
 }
-
-window.onload = ()=>{
-  initCamera();
-  initSensor();
-  initLocation();
-};
