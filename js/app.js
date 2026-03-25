@@ -425,46 +425,47 @@ function updateAR(alpha, beta, gamma){
   const width = wrapper.clientWidth;
   const height = wrapper.clientHeight;
 
-  // init smoothing
-  if(smoothX === 0 && smoothY === 0){
-    smoothX = width/2;
-    smoothY = height/2;
-  }
+  // 🔥 INIT SMOOTHING
+  if(!smoothX) smoothX = width/2;
+  if(!smoothY) smoothY = height/2;
 
-  // 🔥 HEADING SUDAH SESUAI KALIBRASI
+  // 🔥 HEADING + KALIBRASI
   let heading = (360 - alpha) - headingOffset;
   heading = (heading + 360) % 360;
 
-  const pitch = beta || 0;
+  // 🔥 PITCH + OFFSET (PENTING)
+  const pitchOffset = 5; // bisa kamu tuning 3–10
+  const pitch = (beta || 0) + pitchOffset;
+
   const roll  = gamma || 0;
 
   // 🔥 DELTA POSISI HILAL
   let deltaAz  = hilalData.azi - heading;
   let deltaAlt = hilalData.alt - pitch;
 
-  // normalisasi azimuth
+  // 🔥 NORMALISASI AZIMUTH
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
 
-  // 🔥 FOV (LEBIH REALISTIS DARI *2)
+  // 🔥 FIELD OF VIEW (REALISTIS)
   const fovX = 60;
   const fovY = 45;
 
   let targetX = width/2 + (deltaAz / fovX) * width + roll * 0.3;
   let targetY = height/2 - (deltaAlt / fovY) * height;
 
-  // batas layar
-  targetX = Math.max(30, Math.min(width-30, targetX));
-  targetY = Math.max(40, Math.min(height-40, targetY));
+  // 🔥 BATAS LAYAR
+  targetX = Math.max(25, Math.min(width - 25, targetX));
+  targetY = Math.max(35, Math.min(height - 35, targetY));
 
-  // smoothing (lebih halus)
+  // 🔥 SMOOTHING HALUS
   smoothX += (targetX - smoothX) * 0.1;
   smoothY += (targetY - smoothY) * 0.1;
 
   marker.style.left = smoothX + "px";
   marker.style.top  = smoothY + "px";
 
-  // 🔥 AKURASI & FEEDBACK
+  // 🎯 HITUNG ERROR (AKURASI)
   const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
 
   if(error < 5){
@@ -483,11 +484,11 @@ function updateAR(alpha, beta, gamma){
     marker.style.color = "red";
   }
 
-  // 🔹 OVERLAY (2 DESIMAL SAMA DENGAN CARD)
+  // 🔹 OVERLAY (SAMA DENGAN CARD → 2 DESIMAL)
   if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
   if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
 
-  // 🔥 PATH HILAL (SUDAH IKUT FOV)
+  // 🔥 PATH HILAL (REALISTIS)
   if(Date.now() - lastPathUpdate > 2000){
 
     lastPathUpdate = Date.now();
@@ -499,6 +500,7 @@ function updateAR(alpha, beta, gamma){
       dot.className = "hilal-path-dot";
 
       let dAz = p.azi - heading;
+
       if(dAz > 180) dAz -= 360;
       if(dAz < -180) dAz += 360;
 
@@ -511,6 +513,13 @@ function updateAR(alpha, beta, gamma){
       wrapper.appendChild(dot);
       setTimeout(()=> dot.remove(), 1500);
     });
+  }
+
+  // 📊 DEBUG (OPSIONAL - BISA DIHAPUS)
+  const statusEl = document.getElementById("arStatus");
+  if(statusEl){
+    statusEl.innerText =
+      `Az:${hilalData.azi.toFixed(1)}° | Head:${heading.toFixed(1)}° | Δ:${deltaAz.toFixed(1)}°`;
   }
 }
 
