@@ -70,31 +70,30 @@ body{
 video{
   width:100%;
   height:220px;
-  object-fit:contain;
-  background:black;
+  object-fit:cover;
   border-radius:15px;
   display:block;
+  z-index:1;
 }
 .camera-wrapper{
   position: relative;
   overflow: hidden;
   border-radius:15px;
-  background:black;
 }
 
 /* MARKER */
 #marker{
   position:absolute;
   font-size:30px;
-  left:0;
-  top:0;
-  transform: translate(-50%, -50%);
   z-index:4;
   pointer-events:none;
+  transform: translate(0,0);
+  left:0;
+  top:0;
   background: transparent !important;
   border: none !important;
   filter: drop-shadow(0 0 6px currentColor);
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, transform 0.1s ease;
 }
 
 /* CROSSHAIR */
