@@ -15,6 +15,9 @@ let calibrating = false;
 let currentLat = 0;
 let currentLon = 0;
 let lastPathUpdate = 0;
+let lastAlpha = 0;
+let lastBeta = 0;
+let lastGamma = 0;
 
 // ================= KONSTANTA =================
 const rad = Math.PI/180;
@@ -50,6 +53,7 @@ window.onload = () => {
     }
   }, { once:true });
 };
+
 // ================= JAM =================
 function startClock(){
   setInterval(()=>{
@@ -397,18 +401,25 @@ function autoReloadAtMaghrib(lat, lon){
 
 // ================= SENSOR =================
 function initSensor(){
-  let lastAlpha=0, lastGamma=0;
+
+  let lastAlpha=0, lastBeta=0, lastGamma=0;
+
   window.addEventListener("deviceorientation", e=>{
-    let alpha=e.alpha||0;
-    let gamma=e.gamma||0;
 
-    alpha=lastAlpha+(alpha-lastAlpha)*0.08;
-    gamma=lastGamma+(gamma-lastGamma)*0.08;
+    let alpha = e.alpha || 0;
+    let beta  = e.beta  || 0;   // 🔥 INI YANG KURANG
+    let gamma = e.gamma || 0;
 
-    lastAlpha=alpha;
-    lastGamma=gamma;
+    // smoothing
+    alpha = lastAlpha + (alpha - lastAlpha)*0.08;
+    beta  = lastBeta  + (beta  - lastBeta)*0.08;
+    gamma = lastGamma + (gamma - lastGamma)*0.08;
 
-    updateAR(alpha,0,gamma);
+    lastAlpha = alpha;
+    lastBeta  = beta;
+    lastGamma = gamma;
+
+    updateAR(alpha, beta, gamma); // 🔥 pakai beta
   });
 }
 
@@ -585,3 +596,9 @@ function showNotif(judul,pesan){
     new Notification(judul,{body:pesan,icon:"assets/icon-192.png"});
   }
 }
+
+window.onload = ()=>{
+  initCamera();
+  initSensor();
+  initLocation();
+};
