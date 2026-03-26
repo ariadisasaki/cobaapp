@@ -421,6 +421,11 @@ function initSensor(){
 
     updateAR(alpha, beta, gamma); // 🔥 pakai beta
   });
+  if ("ondeviceorientationabsolute" in window) {
+  window.addEventListener("deviceorientationabsolute", handler);
+  } else {
+  window.addEventListener("deviceorientation", handler);
+  }
 }
 
 // ================= AR =================
@@ -436,47 +441,61 @@ function updateAR(alpha, beta, gamma){
   const width = wrapper.clientWidth;
   const height = wrapper.clientHeight;
 
-  // 🔥 INIT SMOOTHING
-  if(!smoothX) smoothX = width/2;
-  if(!smoothY) smoothY = height/2;
+  // ================= TRUE HEADING (ANTI MELENCENG) =================
+  const _x = beta  * Math.PI/180;
+  const _y = gamma * Math.PI/180;
+  const _z = alpha * Math.PI/180;
 
-  // 🔥 HEADING + KALIBRASI
-  let heading = (360 - alpha) - headingOffset;
-  heading = (heading + 360) % 360;
+  const cX = Math.cos(_x);
+  const cY = Math.cos(_y);
+  const cZ = Math.cos(_z);
+  const sX = Math.sin(_x);
+  const sY = Math.sin(_y);
+  const sZ = Math.sin(_z);
 
-  // 🔥 PITCH + OFFSET (PENTING)
-  const pitchOffset = 5; // bisa kamu tuning 3–10
+  const Vx = -cZ * sY - sZ * sX * cY;
+  const Vy = -sZ * sY + cZ * sX * cY;
+
+  let heading = Math.atan2(Vx, Vy) * 180/Math.PI;
+  if(heading < 0) heading += 360;
+
+  // pakai offset kalibrasi
+  heading = (heading - headingOffset + 360) % 360;
+
+  // ================= PITCH & ROLL =================
+  const pitchOffset = 5; // bisa disesuaikan (3–10)
   const pitch = (beta || 0) + pitchOffset;
-
   const roll  = gamma || 0;
 
-  // 🔥 DELTA POSISI HILAL
+  // ================= DELTA TARGET =================
   let deltaAz  = hilalData.azi - heading;
   let deltaAlt = hilalData.alt - pitch;
 
-  // 🔥 NORMALISASI AZIMUTH
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
 
-  // 🔥 FIELD OF VIEW (REALISTIS)
+  // ================= FIELD OF VIEW =================
   const fovX = 60;
   const fovY = 45;
 
   let targetX = width/2 + (deltaAz / fovX) * width + roll * 0.3;
   let targetY = height/2 - (deltaAlt / fovY) * height;
 
-  // 🔥 BATAS LAYAR
+  // ================= BATAS LAYAR =================
   targetX = Math.max(25, Math.min(width - 25, targetX));
   targetY = Math.max(35, Math.min(height - 35, targetY));
 
-  // 🔥 SMOOTHING HALUS
+  // ================= SMOOTHING =================
+  if(!smoothX) smoothX = width/2;
+  if(!smoothY) smoothY = height/2;
+
   smoothX += (targetX - smoothX) * 0.1;
   smoothY += (targetY - smoothY) * 0.1;
 
   marker.style.left = smoothX + "px";
   marker.style.top  = smoothY + "px";
 
-  // 🎯 HITUNG ERROR (AKURASI)
+  // ================= AKURASI =================
   const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
 
   if(error < 5){
@@ -495,11 +514,11 @@ function updateAR(alpha, beta, gamma){
     marker.style.color = "red";
   }
 
-  // 🔹 OVERLAY (SAMA DENGAN CARD → 2 DESIMAL)
+  // ================= OVERLAY INFO =================
   if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
   if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
 
-  // 🔥 PATH HILAL (REALISTIS)
+  // ================= PATH HILAL =================
   if(Date.now() - lastPathUpdate > 2000){
 
     lastPathUpdate = Date.now();
@@ -526,7 +545,7 @@ function updateAR(alpha, beta, gamma){
     });
   }
 
-  // 📊 DEBUG (OPSIONAL - BISA DIHAPUS)
+  // ================= DEBUG =================
   const statusEl = document.getElementById("arStatus");
   if(statusEl){
     statusEl.innerText =
@@ -545,25 +564,21 @@ function calibrateCompass(){
 
     samples.push(e.alpha);
 
-    if(samples.length >= 25){
+    if(samples.length >= 30){
 
-      // 🔥 ambil median (lebih stabil dari average)
       samples.sort((a,b)=>a-b);
       let median = samples[Math.floor(samples.length/2)];
 
-      // 🔥 hitung heading sekarang
-      let currentHeading = (360 - median) % 360;
+      // 🔥 heading asli
+      let heading = (360 - median) % 360;
 
-      // 🔥 hitung offset terhadap arah hilal
-      headingOffset = currentHeading - hilalData.azi;
-
-      // normalisasi offset
-      headingOffset = (headingOffset + 360) % 360;
+      // 🔥 offset ke UTARA
+      headingOffset = heading;
 
       calibrating = false;
       window.removeEventListener("deviceorientation", handler);
 
-      alert("Kalibrasi selesai ✅\nArahkan ke bulan untuk hasil terbaik");
+      alert("Kalibrasi selesai ✅\nGerakkan HP bentuk angka 8 dulu");
     }
   };
 
