@@ -414,144 +414,106 @@ function initSensor(){
 
 // ================= AR =================
 function updateAR(alpha, beta, gamma){
-
   const marker = document.getElementById('marker');
   const wrapper = document.querySelector('.camera-wrapper');
-  const azEl = document.getElementById('arAzimuth');
-  const altEl = document.getElementById('arAltitude');
-
-  if(!marker || !wrapper || alpha == null) return;
+  const azEl = document.getElementById('arAzimuth');  // overlay azimuth
+  const altEl = document.getElementById('arAltitude'); // overlay altitude
+  if(!marker || !wrapper) return;
 
   const width = wrapper.clientWidth;
   const height = wrapper.clientHeight;
 
-  // 🔥 INIT SMOOTHING
-  if(!smoothX) smoothX = width/2;
-  if(!smoothY) smoothY = height/2;
+  if(smoothX === 0 && smoothY === 0){
+    smoothX = width/2;
+    smoothY = height/2;
+  }
 
-  // 🔥 HEADING + KALIBRASI
-  let heading = (360 - alpha) - headingOffset;
-  heading = (heading + 360) % 360;
-
-  // 🔥 PITCH + OFFSET (PENTING)
-  const pitchOffset = 5; // bisa kamu tuning 3–10
-  const pitch = (beta || 0) + pitchOffset;
-
+  const heading = (360 - alpha + headingOffset) % 360;
+  const pitch = beta || 0;
   const roll  = gamma || 0;
 
-  // 🔥 DELTA POSISI HILAL
+  // hitung delta dari azimuth & altitude hilal
   let deltaAz  = hilalData.azi - heading;
   let deltaAlt = hilalData.alt - pitch;
 
-  // 🔥 NORMALISASI AZIMUTH
+  // normalize
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
 
-  // 🔥 FIELD OF VIEW (REALISTIS)
-  const fovX = 60;
-  const fovY = 45;
+  deltaAz  = Math.max(-45, Math.min(45, deltaAz));
+  deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
 
-  let targetX = width/2 + (deltaAz / fovX) * width + roll * 0.3;
-  let targetY = height/2 - (deltaAlt / fovY) * height;
+  // target posisi marker di layar
+  let targetX = width/2 + deltaAz * 2 + roll*0.5;
+  let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
 
-  // 🔥 BATAS LAYAR
-  targetX = Math.max(25, Math.min(width - 25, targetX));
-  targetY = Math.max(35, Math.min(height - 35, targetY));
+  targetX = Math.max(30, Math.min(width-30, targetX));
+  targetY = Math.max(40, Math.min(height-40, targetY));
 
-  // 🔥 SMOOTHING HALUS
-  smoothX += (targetX - smoothX) * 0.1;
-  smoothY += (targetY - smoothY) * 0.1;
+  // smoothing
+  smoothX += (targetX - smoothX) * 0.08;
+  smoothY += (targetY - smoothY) * 0.06;
 
+  // update posisi marker
   marker.style.left = smoothX + "px";
   marker.style.top  = smoothY + "px";
 
-  // 🎯 HITUNG ERROR (AKURASI)
+  // update warna marker & beep
   const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
-
   if(error < 5){
     marker.style.color = "lime";
-
     if(!beepCooldown){
-      playBeep(1200, 150);
-      navigator.vibrate && navigator.vibrate(120);
+      playBeep(1200, 200);
+      navigator.vibrate && navigator.vibrate(150);
       beepCooldown = true;
-      setTimeout(()=> beepCooldown = false, 800);
+      setTimeout(()=> beepCooldown = false, 1000);
     }
-
   } else if(error < 15){
     marker.style.color = "yellow";
   } else {
     marker.style.color = "red";
   }
 
-  // 🔹 OVERLAY (SAMA DENGAN CARD → 2 DESIMAL)
+  // 🔹 Update overlay AR untuk azimuth & altitude hilal
   if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
   if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
 
-  // 🔥 PATH HILAL (REALISTIS)
   if(Date.now() - lastPathUpdate > 2000){
+  lastPathUpdate = Date.now();
 
-    lastPathUpdate = Date.now();
+  const path = generateHilalPath(currentLat, currentLon);
 
-    const path = generateHilalPath(currentLat, currentLon);
+  path.forEach(p=>{
+    const dot = document.createElement("div");
+    dot.className = "hilal-path-dot";
 
-    path.forEach(p=>{
-      const dot = document.createElement("div");
-      dot.className = "hilal-path-dot";
+    const dx = (p.azi - heading) * 2;
+    const dy = (p.alt - pitch) * -2;
 
-      let dAz = p.azi - heading;
+    dot.style.left = (width/2 + dx) + "px";
+    dot.style.top  = (height/2 + dy) + "px";
 
-      if(dAz > 180) dAz -= 360;
-      if(dAz < -180) dAz += 360;
-
-      let x = width/2 + (dAz / fovX) * width;
-      let y = height/2 - (p.alt / fovY) * height;
-
-      dot.style.left = x + "px";
-      dot.style.top  = y + "px";
-
-      wrapper.appendChild(dot);
-      setTimeout(()=> dot.remove(), 1500);
-    });
-  }
-
-  // 📊 DEBUG (OPSIONAL - BISA DIHAPUS)
-  const statusEl = document.getElementById("arStatus");
-  if(statusEl){
-    statusEl.innerText =
-      `Az:${hilalData.azi.toFixed(1)}° | Head:${heading.toFixed(1)}° | Δ:${deltaAz.toFixed(1)}°`;
-  }
+    wrapper.appendChild(dot);
+    setTimeout(()=>dot.remove(),1500);
+  });
+}
 }
 
 // ================= KALIBRASI KOMPAS =================
 function calibrateCompass(){
-
-  alert("Arahkan HP tepat ke bulan/hilal, lalu tekan OK");
-
+  calibrating = true;
   let samples = [];
 
   const handler = (e)=>{
-    if(e.alpha == null) return;
-
     samples.push(e.alpha);
 
-    if(samples.length >= 20){
-
-      samples.sort((a,b)=>a-b);
-      let median = samples[Math.floor(samples.length/2)];
-
-      // heading dari sensor
-      let sensorHeading = (360 - median) % 360;
-
-      // azimuth hilal asli
-      let realAz = hilalData.azi;
-
-      // offset supaya cocok
-      headingOffset = (sensorHeading - realAz + 360) % 360;
-
+    if(samples.length > 20){
+      let avg = samples.reduce((a,b)=>a+b)/samples.length;
+      headingOffset = 360 - avg;
+      calibrating = false;
       window.removeEventListener("deviceorientation", handler);
 
-      alert("Kalibrasi selesai ✅\nMarker sekarang mengikuti arah hilal");
+      alert("Gerakkan perangkat anda dengan membentuk pola angka 8 di udara ✅");
     }
   };
 
