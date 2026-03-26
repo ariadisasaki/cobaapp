@@ -526,7 +526,8 @@ function updateAR(alpha, beta, gamma){
 // ================= KALIBRASI KOMPAS =================
 function calibrateCompass(){
 
-  calibrating = true;
+  alert("Arahkan HP tepat ke bulan/hilal, lalu tekan OK");
+
   let samples = [];
 
   const handler = (e)=>{
@@ -534,25 +535,23 @@ function calibrateCompass(){
 
     samples.push(e.alpha);
 
-    if(samples.length >= 25){
+    if(samples.length >= 20){
 
-      // 🔥 ambil median (lebih stabil dari average)
       samples.sort((a,b)=>a-b);
       let median = samples[Math.floor(samples.length/2)];
 
-      // 🔥 hitung heading sekarang
-      let currentHeading = (360 - median) % 360;
+      // heading dari sensor
+      let sensorHeading = (360 - median) % 360;
 
-      // 🔥 hitung offset terhadap arah hilal
-      headingOffset = currentHeading - hilalData.azi;
+      // azimuth hilal asli
+      let realAz = hilalData.azi;
 
-      // normalisasi offset
-      headingOffset = (headingOffset + 360) % 360;
+      // offset supaya cocok
+      headingOffset = (sensorHeading - realAz + 360) % 360;
 
-      calibrating = false;
       window.removeEventListener("deviceorientation", handler);
 
-      alert("Kalibrasi selesai ✅\nArahkan ke bulan untuk hasil terbaik");
+      alert("Kalibrasi selesai ✅\nMarker sekarang mengikuti arah hilal");
     }
   };
 
