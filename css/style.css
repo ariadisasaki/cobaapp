@@ -70,33 +70,37 @@ body{
 video{
   width:100%;
   height:220px;
-  object-fit:cover;
+  object-fit:contain; /* 🔥 FIX: jangan crop kamera */
   border-radius:15px;
   display:block;
   z-index:1;
 }
+
 .camera-wrapper{
   position: relative;
   overflow: hidden;
   border-radius:15px;
 }
 
-/* MARKER */
+/* MARKER (🔴 TARGET BULAN) */
 #marker{
   position:absolute;
   font-size:30px;
   z-index:4;
   pointer-events:none;
-  transform: translate(0,0);
+
+  /* 🔥 FIX PALING PENTING: center marker */
+  transform: translate(-50%, -50%);
+
   left:0;
   top:0;
   background: transparent !important;
   border: none !important;
   filter: drop-shadow(0 0 6px currentColor);
-  transition: color 0.2s ease, transform 0.1s ease;
+  transition: color 0.2s ease;
 }
 
-/* CROSSHAIR */
+/* CROSSHAIR (titik tengah kamera) */
 .crosshair{
   position:absolute;
   top:50%;
@@ -108,6 +112,9 @@ video{
   border-radius:50%;
   z-index:3;
   pointer-events:none;
+
+  /* optional glow biar jelas */
+  box-shadow:0 0 10px #00c6ff;
 }
 
 /* GRID RADAR */
@@ -136,6 +143,7 @@ video{
   font-size:13px;
   z-index:5;
 }
+
 .ar-overlay {
   position: absolute;
   left: 50%;
@@ -149,6 +157,7 @@ video{
   pointer-events: none;
 }
 
+/* BUTTON KALIBRASI */
 #calibrateBtn{
   width:100%;
   padding:12px;
