@@ -444,8 +444,8 @@ function updateAR(alpha, beta, gamma){
   deltaAlt = Math.max(-40, Math.min(40, deltaAlt));
 
   // target posisi marker di layar
-  let targetX = width/2 + deltaAz * 1 + roll*0.3;
-  let targetY = height/2 - deltaAlt * 1.6 - pitch*0.08;
+  let targetX = width/2 + deltaAz * 0.8 + roll*0.3;
+  let targetY = height/2 - deltaAlt * 1.5 - pitch*0.08;
 
   targetX = Math.max(30, Math.min(width-30, targetX));
   targetY = Math.max(40, Math.min(height-40, targetY));
