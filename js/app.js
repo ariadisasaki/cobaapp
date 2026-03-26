@@ -433,7 +433,7 @@ function updateAR(alpha, beta, gamma){
   const roll  = gamma || 0;
 
   // hitung delta dari azimuth & altitude hilal
-  let deltaAz  = hilalData.azi - heading;
+  let deltaAz  = heading - hilalData.azi;
   let deltaAlt = hilalData.alt - pitch;
 
   // normalize
