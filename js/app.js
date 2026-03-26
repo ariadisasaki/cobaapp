@@ -15,9 +15,6 @@ let calibrating = false;
 let currentLat = 0;
 let currentLon = 0;
 let lastPathUpdate = 0;
-let lastAlpha = 0;
-let lastBeta = 0;
-let lastGamma = 0;
 
 // ================= KONSTANTA =================
 const rad = Math.PI/180;
@@ -26,18 +23,19 @@ const deg = 180/Math.PI;
 // ================= INIT =================
 window.onload = () => {
   startClock();
-  getLocation();   // 🔥 ini sudah handle GPS + kamera
-  initSensor();    // 🔥 sensor AR
+  getLocation();
+  initSensor();
 
-  // tombol kalibrasi
+  // Tombol Kalibrasi Kompas
   const calibBtn = document.getElementById("calibrateBtn");
   if(calibBtn){
-    calibBtn.addEventListener("click", calibrateCompass);
+    calibBtn.addEventListener("click", ()=>{
+      calibrateCompass();
+    });
   }
 
-  // aktifkan audio + notif saat klik pertama
+  // Notifikasi & audio aktif otomatis saat klik pertama
   document.body.addEventListener("click", () => {
-
     if(!audioCtx){
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       console.log("Audio aktif");
@@ -50,10 +48,8 @@ window.onload = () => {
         }
       });
     }
-
   }, { once:true });
 };
-
 // ================= JAM =================
 function startClock(){
   setInterval(()=>{
@@ -401,25 +397,18 @@ function autoReloadAtMaghrib(lat, lon){
 
 // ================= SENSOR =================
 function initSensor(){
-
-  let lastAlpha=0, lastBeta=0, lastGamma=0;
-
+  let lastAlpha=0, lastGamma=0;
   window.addEventListener("deviceorientation", e=>{
+    let alpha=e.alpha||0;
+    let gamma=e.gamma||0;
 
-    let alpha = e.alpha || 0;
-    let beta  = e.beta  || 0;   // 🔥 INI YANG KURANG
-    let gamma = e.gamma || 0;
+    alpha=lastAlpha+(alpha-lastAlpha)*0.08;
+    gamma=lastGamma+(gamma-lastGamma)*0.08;
 
-    // smoothing
-    alpha = lastAlpha + (alpha - lastAlpha)*0.08;
-    beta  = lastBeta  + (beta  - lastBeta)*0.08;
-    gamma = lastGamma + (gamma - lastGamma)*0.08;
+    lastAlpha=alpha;
+    lastGamma=gamma;
 
-    lastAlpha = alpha;
-    lastBeta  = beta;
-    lastGamma = gamma;
-
-    updateAR(alpha, beta, gamma); // 🔥 pakai beta
+    updateAR(alpha,0,gamma);
   });
 }
 
