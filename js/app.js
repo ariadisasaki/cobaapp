@@ -79,24 +79,49 @@ function koreksiParallax(alt){
 // ================= HIJRI =================
 function getHijri(lat, lon){
   const now = new Date();
+
   const maghribData = hitungMaghrib(lat, lon);
   const maghrib = maghribData ? maghribData.decimal : 18;
 
   const jam = now.getHours() + now.getMinutes()/60;
+
+  const todayKey = "hijriShift";
+  const todayDate = now.toDateString();
+
+  let saved = JSON.parse(localStorage.getItem(todayKey) || "{}");
+
   let tambahHari = 0;
 
-  if(jam >= maghrib){
-    const hilal = hitungHilal(lat, lon);
-    const bisaRukyat = hilal.alt >= 3 && hilal.elo >= 6.4 && hilal.age >= 8;
-    if(bisaRukyat) tambahHari = 1;
+  // 🔥 kalau sudah pernah dihitung hari ini → pakai itu
+  if(saved.date === todayDate){
+    tambahHari = saved.shift;
+
+  } else {
+
+    if(jam >= maghrib){
+      const hilal = hitungHilal(lat, lon);
+      const bisaRukyat = hilal.alt >= 3 && hilal.elo >= 6.4 && hilal.age >= 8;
+
+      tambahHari = bisaRukyat ? 1 : 0;
+
+      // simpan hasil supaya tidak berubah-ubah
+      localStorage.setItem(todayKey, JSON.stringify({
+        date: todayDate,
+        shift: tambahHari
+      }));
+    }
   }
 
+  // ================= KONVERSI JD =================
   let jd = Math.floor((now.getTime()/86400000)+2440587.5) + tambahHari;
+
   let l = jd - 1948440 + 10632;
   let n = Math.floor((l-1)/10631);
   l = l - 10631*n + 354;
+
   let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
         +(Math.floor(l/5670))*(Math.floor((43*l)/15238));
+
   l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
         - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
 
@@ -107,9 +132,15 @@ function getHijri(lat, lon){
   hijriMonthIndex = m-1;
   tanggalHijriGlobal = d;
 
-  const bulan = ["Muharram","Safar","Rabiul Awal","Rabiul Akhir","Jumadil Awal","Jumadil Akhir",
-                 "Rajab","Syaban","Ramadhan","Syawal","Zulkaidah","Zulhijjah"];
-  document.getElementById('hijri').innerText = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
+  const bulan = [
+    "Muharram","Safar","Rabiul Awal","Rabiul Akhir",
+    "Jumadil Awal","Jumadil Akhir",
+    "Rajab","Syaban","Ramadhan","Syawal",
+    "Zulkaidah","Zulhijjah"
+  ];
+
+  document.getElementById('hijri').innerText =
+    `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 }
 
 // ================= GPS =================
