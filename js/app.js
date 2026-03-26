@@ -408,7 +408,7 @@ function initSensor(){
     lastAlpha=alpha;
     lastGamma=gamma;
 
-    updateAR(alpha,0,gamma);
+    updateAR(alpha, e.beta || 0, gamma);
   });
 }
 
@@ -439,6 +439,15 @@ function updateAR(alpha, beta, gamma){
   // normalize
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
+
+  const debug = document.getElementById("debugAR");
+  if(debug){
+    debug.innerText =
+      "Heading: " + heading.toFixed(1) +
+      "\nTarget Azi: " + hilalData.azi.toFixed(1) +
+      "\nDeltaAz: " + deltaAz.toFixed(1) +
+      "\nDeltaAlt: " + deltaAlt.toFixed(1);
+  }
 
   deltaAz  = Math.max(-45, Math.min(45, deltaAz));
   deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
