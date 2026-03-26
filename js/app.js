@@ -433,7 +433,7 @@ function updateAR(alpha, beta, gamma){
   const roll  = gamma || 0;
 
   // hitung delta dari azimuth & altitude hilal
-  let deltaAz  = heading - hilalData.azi;
+  let deltaAz  = hilalData.azi - heading;
   let deltaAlt = hilalData.alt - pitch;
 
   // normalize
@@ -444,8 +444,8 @@ function updateAR(alpha, beta, gamma){
   deltaAlt = Math.max(-40, Math.min(40, deltaAlt));
 
   // target posisi marker di layar
-  let targetX = width/2 + deltaAz * 1.8 + roll*0.05;
-  let targetY = height/2 - deltaAlt * 1.5 - pitch*0.08;
+  let targetX = width/2 + deltaAz * 0.1 + roll*0.1;
+  let targetY = height/2 - deltaAlt * 1.2 - pitch*0.08;
 
   targetX = Math.max(30, Math.min(width-30, targetX));
   targetY = Math.max(40, Math.min(height-40, targetY));
