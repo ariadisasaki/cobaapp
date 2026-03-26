@@ -408,7 +408,7 @@ function initSensor(){
     lastAlpha=alpha;
     lastGamma=gamma;
 
-    updateAR(alpha, e.beta || 0, gamma);
+    updateAR(alpha,0,gamma);
   });
 }
 
@@ -440,24 +440,12 @@ function updateAR(alpha, beta, gamma){
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
 
-  const debug = document.getElementById("debugAR");
-  if(debug){
-    debug.innerText =
-      "Heading: " + heading.toFixed(1) +
-      "\nTarget Azi: " + hilalData.azi.toFixed(1) +
-      "\nDeltaAz: " + deltaAz.toFixed(1) +
-      "\nDeltaAlt: " + deltaAlt.toFixed(1);
-  }
-
   deltaAz  = Math.max(-45, Math.min(45, deltaAz));
   deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
 
-  // skala konversi derajat → pixel (sesuaikan FOV kamera)
-  const scaleX = width / 60;   // horizontal ~60°
-  const scaleY = height / 40;  // vertikal ~40°
-  
-  let targetX = width/2 + deltaAz * scaleX;
-  let targetY = height/2 - deltaAlt * scaleY;
+  // target posisi marker di layar
+  let targetX = width/2 + deltaAz * 2 + roll*0.5;
+  let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
 
   targetX = Math.max(30, Math.min(width-30, targetX));
   targetY = Math.max(40, Math.min(height-40, targetY));
