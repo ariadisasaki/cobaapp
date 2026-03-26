@@ -397,26 +397,18 @@ function autoReloadAtMaghrib(lat, lon){
 
 // ================= SENSOR =================
 function initSensor(){
-  let lastAlpha = 0;
-  let lastBeta  = 0;
-  let lastGamma = 0;
-
+  let lastAlpha=0, lastGamma=0;
   window.addEventListener("deviceorientation", e=>{
-    let alpha = e.alpha || 0; // kompas
-    let beta  = e.beta  || 0; // naik turun (pitch)
-    let gamma = e.gamma || 0; // roll kiri kanan
+    let alpha=e.alpha||0;
+    let gamma=e.gamma||0;
 
-    // smoothing biar tidak goyang
-    alpha = lastAlpha + (alpha - lastAlpha) * 0.08;
-    beta  = lastBeta  + (beta  - lastBeta)  * 0.08;
-    gamma = lastGamma + (gamma - lastGamma) * 0.08;
+    alpha=lastAlpha+(alpha-lastAlpha)*0.08;
+    gamma=lastGamma+(gamma-lastGamma)*0.08;
 
-    lastAlpha = alpha;
-    lastBeta  = beta;
-    lastGamma = gamma;
+    lastAlpha=alpha;
+    lastGamma=gamma;
 
-    // 🔥 kirim SEMUA data (ini fix penting)
-    updateAR(alpha, beta, gamma);
+    updateAR(alpha,0,gamma);
   });
 }
 
@@ -424,68 +416,53 @@ function initSensor(){
 function updateAR(alpha, beta, gamma){
   const marker = document.getElementById('marker');
   const wrapper = document.querySelector('.camera-wrapper');
-  const azEl = document.getElementById('arAzimuth');
-  const altEl = document.getElementById('arAltitude');
-
+  const azEl = document.getElementById('arAzimuth');  // overlay azimuth
+  const altEl = document.getElementById('arAltitude'); // overlay altitude
   if(!marker || !wrapper) return;
 
-  const width  = wrapper.clientWidth;
+  const width = wrapper.clientWidth;
   const height = wrapper.clientHeight;
 
-  // ================= FOV KAMERA =================
-  const FOV_X = 60; // horizontal
-  const FOV_Y = 45; // vertical
-
-  // ================= INIT SMOOTH =================
   if(smoothX === 0 && smoothY === 0){
     smoothX = width/2;
     smoothY = height/2;
   }
 
-  // ================= NORMALISASI =================
-  function normalizeAngle(a){
-    a = a % 360;
-    return a < 0 ? a + 360 : a;
-  }
+  const heading = (360 - alpha + headingOffset) % 360;
+  const pitch = beta || 0;
+  const roll  = gamma || 0;
 
-  const heading = normalizeAngle(360 - alpha + headingOffset);
-  const targetAz = normalizeAngle(hilalData.azi);
+  // hitung delta dari azimuth & altitude hilal
+  let deltaAz  = hilalData.azi - heading;
+  let deltaAlt = hilalData.alt - pitch;
 
-  let deltaAz = targetAz - heading;
-
+  // normalize
   if(deltaAz > 180) deltaAz -= 360;
   if(deltaAz < -180) deltaAz += 360;
 
-  // altitude (pakai beta asli)
-  const pitch = beta || 0;
-  let deltaAlt = hilalData.alt - pitch;
+  deltaAz  = Math.max(-45, Math.min(45, deltaAz));
+  deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
 
-  // ================= HORIZON CHECK =================
-  if(hilalData.alt < -5){
-    marker.style.display = "none";
-    return;
-  }else{
-    marker.style.display = "block";
-  }
+  // skala konversi derajat → pixel (sesuaikan FOV kamera)
+  const scaleX = width / 60;   // horizontal ~60°
+  const scaleY = height / 40;  // vertikal ~40°
+  
+  let targetX = width/2 + deltaAz * scaleX;
+  let targetY = height/2 - deltaAlt * scaleY;
 
-  // ================= CONVERT KE LAYAR =================
-  let targetX = width/2 + (deltaAz / FOV_X) * width;
-  let targetY = height/2 - (deltaAlt / FOV_Y) * height;
-
-  // batas layar
   targetX = Math.max(30, Math.min(width-30, targetX));
   targetY = Math.max(40, Math.min(height-40, targetY));
 
-  // ================= SMOOTHING =================
+  // smoothing
   smoothX += (targetX - smoothX) * 0.08;
-  smoothY += (targetY - smoothY) * 0.08;
+  smoothY += (targetY - smoothY) * 0.06;
 
+  // update posisi marker
   marker.style.left = smoothX + "px";
   marker.style.top  = smoothY + "px";
 
-  // ================= ERROR DETECTION =================
+  // update warna marker & beep
   const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
-
   if(error < 5){
     marker.style.color = "lime";
     if(!beepCooldown){
@@ -500,9 +477,29 @@ function updateAR(alpha, beta, gamma){
     marker.style.color = "red";
   }
 
-  // ================= INFO OVERLAY =================
+  // 🔹 Update overlay AR untuk azimuth & altitude hilal
   if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
   if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
+
+  if(Date.now() - lastPathUpdate > 2000){
+  lastPathUpdate = Date.now();
+
+  const path = generateHilalPath(currentLat, currentLon);
+
+  path.forEach(p=>{
+    const dot = document.createElement("div");
+    dot.className = "hilal-path-dot";
+
+    const dx = (p.azi - heading) * 2;
+    const dy = (p.alt - pitch) * -2;
+
+    dot.style.left = (width/2 + dx) + "px";
+    dot.style.top  = (height/2 + dy) + "px";
+
+    wrapper.appendChild(dot);
+    setTimeout(()=>dot.remove(),1500);
+  });
+}
 }
 
 // ================= KALIBRASI KOMPAS =================
