@@ -451,8 +451,8 @@ function updateAR(alpha, beta, gamma){
   targetY = Math.max(40, Math.min(height-40, targetY));
 
   // smoothing
-  smoothX += (targetX - smoothX) * 0.12;
-  smoothY += (targetY - smoothY) * 0.12;
+  smoothX += (targetX - smoothX) * 0.06;
+  smoothY += (targetY - smoothY) * 0.06;
 
   // update posisi marker
   marker.style.left = smoothX + "px";
