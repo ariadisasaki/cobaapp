@@ -254,34 +254,22 @@ function hitungHilal(lat, lon, customTime=null){
   document.getElementById('illum').innerText = illumination.toFixed(2) + " %";
 
   if(alt < 0){
-    statusEl.innerText = "🌑 Bulan di bawah horizon";
-    prediksiEl.innerText = "Tidak mungkin rukyat";
-  } else {
-    const imkan = (alt>=3 && elo>=6.4 && age>=8);
-    const q = alt - (0.1018*Math.sqrt(elo));
-    const vis = q>0.216 ? "Mudah terlihat"
-              : q>-0.014 ? "Terlihat dengan alat"
-              : "Tidak terlihat";
+  statusEl.innerText = "🌑 Bulan di bawah horizon";
+  prediksiEl.innerText = "Tidak mungkin rukyat";
+} else {
+  const imkan = (alt>=3 && elo>=6.4 && age>=8);
+  const q = alt - (0.1018*Math.sqrt(elo));
+  const vis = q>0.216 ? "Mudah terlihat"
+            : q>-0.014 ? "Terlihat dengan alat"
+            : "Tidak terlihat";
 
-    // 🔹 hitung hijri dasar ulang (ringan, aman)
-    const now = new Date();
-    let jd0 = Math.floor((now.getTime()/86400000)+2440587.5);
-    let l0 = jd0 - 1948440 + 10632;
-    let n0 = Math.floor((l0-1)/10631);
-    l0 = l0 - 10631*n0 + 354;
-    let j0 = (Math.floor((10985-l0)/5316))*(Math.floor((50*l0)/17719))
-      +(Math.floor(l0/5670))*(Math.floor((43*l0)/15238));
-    l0 = l0 - (Math.floor((30-j0)/15))*(Math.floor((17719*j0)/50))
-      - (Math.floor(j0/16))*(Math.floor((15238*j0)/43)) + 29;
-    
-    const d0 = l0 - Math.floor((709*Math.floor((24*l0)/709))/24);
-    
-    // 🔥 pakai d0, bukan global
-    if(d0 >= 29){
-      
-    }
+  prediksiEl.innerText = vis;
 
-  return data;
+  // 🔹 opsional: logika tambahan kalau mau
+}
+
+// ✅ INI WAJIB ADA DI LUAR if-else
+return data;
 }
 
 // ================= JALUR BULAN =================
