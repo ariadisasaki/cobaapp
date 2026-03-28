@@ -545,14 +545,14 @@ function updateAR(alpha, beta, gamma){
     deltaAz  = Math.max(-45, Math.min(45, deltaAz));
     deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
 
-    let targetX = width/2 + deltaAz * 2 + roll*0.5;
-    let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
+    let targetX = width/2 + deltaAz * 1.5 + roll*0.5;
+    let targetY = height/2 - deltaAlt * 1.5 - pitch*0.3;
 
     targetX = Math.max(30, Math.min(width-30, targetX));
     targetY = Math.max(40, Math.min(height-40, targetY));
 
-    smoothX += (targetX - smoothX) * 0.08;
-    smoothY += (targetY - smoothY) * 0.06;
+    smoothX += (targetX - smoothX) * 0.12;
+    smoothY += (targetY - smoothY) * 0.1;
 
     marker.style.left = smoothX + "px";
     marker.style.top  = smoothY + "px";
