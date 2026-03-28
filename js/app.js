@@ -94,6 +94,13 @@ function getHijri(lat, lon){
   // ================== KEY CACHE ==================
   const key = "hijriStatus_" + today.toDateString();
 
+  // Hapus cache lama
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith("hijriStatus_") && k !== key){
+      localStorage.removeItem(k);
+    }
+  });
+
   let tambahHari = 0;
 
   // ================== LOGIKA SETELAH MAGHRIB ==================
