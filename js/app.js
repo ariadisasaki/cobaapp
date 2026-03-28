@@ -534,7 +534,7 @@ function autoReloadAtMaghrib(lat, lon){
     
     console.log("🌙 Maghrib tercapai, update Hijri");
     
-    getHijri(lat, lon); // 🔥 update tanpa reload
+    updateHijriRealTime(lat, lon); // 🔥 update tanpa reload
   
   }, diff);
 }
