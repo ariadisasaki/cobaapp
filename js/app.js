@@ -137,8 +137,17 @@ function getHijri(lat, lon){
     }
   }
 
-  // ================== JULIAN DAY (FIX HARI) ==================
-  let jd = Math.floor((today.getTime()/86400000) + 2440587.5) + tambahHari;
+  // ================== JULIAN DAY (FIX HARI + ZONA WAKTU AMAN) ==================
+const localMidnight = new Date(
+  now.getFullYear(),
+  now.getMonth(),
+  now.getDate(),
+  0, 0, 0, 0
+);
+
+const utcMidnight = localMidnight.getTime() - (localMidnight.getTimezoneOffset() * 60000);
+
+let jd = Math.floor((utcMidnight / 86400000) + 2440587.5) + tambahHari;
 
   // ================== KONVERSI HIJRI ==================
   let l = jd - 1948440 + 10632;
