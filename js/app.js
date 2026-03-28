@@ -15,6 +15,7 @@ let calibrating = false;
 let currentLat = 0;
 let currentLon = 0;
 let lastPathUpdate = 0;
+const HIJRI_KEY = "hijriLock";
 
 // ================= KONSTANTA =================
 const rad = Math.PI/180;
@@ -80,48 +81,67 @@ function koreksiParallax(alt){
 function getHijri(lat, lon){
   const now = new Date();
 
+  // 🔹 TAMBAHAN 1: KEY HARI INI
+  const todayKey = now.toDateString();
+  const saved = JSON.parse(localStorage.getItem(HIJRI_KEY));
+
+  // 🔒 TAMBAHAN 2: CEK LOCK
+  if(saved && saved.date === todayKey){
+    document.getElementById('hijri').innerText = saved.value;
+    return;
+  }
+
   const maghribData = hitungMaghrib(lat, lon);
   const maghrib = maghribData ? maghribData.decimal : 18;
 
   const jam = now.getHours() + now.getMinutes()/60;
-
-  const todayKey = "hijriShift";
-  const todayDate = now.toDateString();
-
-  let saved = JSON.parse(localStorage.getItem(todayKey) || "{}");
-
   let tambahHari = 0;
 
-  // 🔥 kalau sudah pernah dihitung hari ini → pakai itu
-  if(saved.date === todayDate){
-    tambahHari = saved.shift;
+  // 🔹 BAGIAN MAGHRIB
+  if(jam >= maghrib){
 
-  } else {
+    // ⚠️ SEDERHANAKAN dulu biar stabil
+    tambahHari = 1;
 
-    if(jam >= maghrib){
-      const hilal = hitungHilal(lat, lon);
-      const bisaRukyat = hilal.alt >= 3 && hilal.elo >= 6.4 && hilal.age >= 8;
+    // 🔹 HITUNG HASIL
+    let jd = Math.floor((now.getTime()/86400000)+2440587.5) + tambahHari;
+    let l = jd - 1948440 + 10632;
+    let n = Math.floor((l-1)/10631);
+    l = l - 10631*n + 354;
+    let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
+          +(Math.floor(l/5670))*(Math.floor((43*l)/15238));
+    l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
+          - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
 
-      tambahHari = bisaRukyat ? 1 : 0;
+    const m = Math.floor((24*l)/709);
+    const d = l - Math.floor((709*m)/24);
+    const y = 30*n + j - 30;
 
-      // simpan hasil supaya tidak berubah-ubah
-      localStorage.setItem(todayKey, JSON.stringify({
-        date: todayDate,
-        shift: tambahHari
-      }));
-    }
+    hijriMonthIndex = m-1;
+    tanggalHijriGlobal = d;
+
+    const bulan = ["Muharram","Safar","Rabiul Awal","Rabiul Akhir","Jumadil Awal","Jumadil Akhir",
+                   "Rajab","Syaban","Ramadhan","Syawal","Zulkaidah","Zulhijjah"];
+
+    const hasil = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
+
+    // 🔒 TAMBAHAN 3: SIMPAN LOCK
+    localStorage.setItem(HIJRI_KEY, JSON.stringify({
+      date: todayKey,
+      value: hasil
+    }));
+
+    document.getElementById('hijri').innerText = hasil;
+    return;
   }
 
-  // ================= KONVERSI JD =================
-  let jd = Math.floor((now.getTime()/86400000)+2440587.5) + tambahHari;
-
+  // 🔹 SEBELUM MAGHRIB (NORMAL)
+  let jd = Math.floor((now.getTime()/86400000)+2440587.5);
   let l = jd - 1948440 + 10632;
   let n = Math.floor((l-1)/10631);
   l = l - 10631*n + 354;
-
   let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
         +(Math.floor(l/5670))*(Math.floor((43*l)/15238));
-
   l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
         - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
 
@@ -132,17 +152,11 @@ function getHijri(lat, lon){
   hijriMonthIndex = m-1;
   tanggalHijriGlobal = d;
 
-  const bulan = [
-    "Muharram","Safar","Rabiul Awal","Rabiul Akhir",
-    "Jumadil Awal","Jumadil Akhir",
-    "Rajab","Syaban","Ramadhan","Syawal",
-    "Zulkaidah","Zulhijjah"
-  ];
+  const bulan = ["Muharram","Safar","Rabiul Awal","Rabiul Akhir","Jumadil Awal","Jumadil Akhir",
+                 "Rajab","Syaban","Ramadhan","Syawal","Zulkaidah","Zulhijjah"];
 
-  document.getElementById('hijri').innerText =
-    `${d} ${bulan[hijriMonthIndex]} ${y} H`;
+  document.getElementById('hijri').innerText = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 }
-
 // ================= GPS =================
 function getLocation(){
   navigator.geolocation.getCurrentPosition(async p=>{
@@ -475,8 +489,8 @@ function updateAR(alpha, beta, gamma){
   deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
 
   // target posisi marker di layar
-  let targetX = width/2 + deltaAz * 1.2 + roll*0.5;
-  let targetY = height/2 - deltaAlt * 1.4 - pitch*0.3;
+  let targetX = width/2 + deltaAz * 2 + roll*0.5;
+  let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
 
   targetX = Math.max(30, Math.min(width-30, targetX));
   targetY = Math.max(40, Math.min(height-40, targetY));
