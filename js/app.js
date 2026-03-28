@@ -236,56 +236,60 @@ function getDeltaT(){
 // ================= HILAL =================
 function hitungHilal(lat, lon, customTime=null){
 
-  // 🔒 CEGAH DOUBLE PROSES
   if(isCalculating) return;
   isCalculating = true;
 
   const statusEl = document.getElementById('status');
   const prediksiEl = document.getElementById('prediksi');
 
-  statusEl.innerText = "⏳ Menghitung hilal...";
-  prediksiEl.innerText = "";
+  try{
+    statusEl.innerText = "⏳ Menghitung hilal...";
+    prediksiEl.innerText = "";
 
-  const data = hitungHilalCore(lat, lon, customTime);
-  const { alt, azi, elo, age, illumination } = data;
+    const data = hitungHilalCore(lat, lon, customTime);
+    const { alt, azi, elo, age, illumination } = data;
 
-  hilalData.alt = alt;
-  hilalData.azi = azi;
+    hilalData.alt = alt;
+    hilalData.azi = azi;
 
-  document.getElementById('alt').innerText = alt.toFixed(2);
-  document.getElementById('azi').innerText = azi.toFixed(2);
-  document.getElementById('elo').innerText = elo.toFixed(2);
-  document.getElementById('age').innerText = age.toFixed(1);
-  document.getElementById('illum').innerText = illumination.toFixed(2) + " %";
+    document.getElementById('alt').innerText = alt.toFixed(2);
+    document.getElementById('azi').innerText = azi.toFixed(2);
+    document.getElementById('elo').innerText = elo.toFixed(2);
+    document.getElementById('age').innerText = age.toFixed(1);
+    document.getElementById('illum').innerText = illumination.toFixed(2) + " %";
 
-  if(alt < 0){
-    statusEl.innerText = "🌑 Bulan di bawah horizon";
-    prediksiEl.innerText = "Tidak mungkin rukyat";
-  } else {
-
-    const imkan = (alt>=3 && elo>=6.4 && age>=8);
-    const q = alt - (0.1018*Math.sqrt(elo));
-
-    let vis = "";
-    if(q > 0.216){
-      vis = "Mudah terlihat";
-    } else if(q > -0.014){
-      vis = "Terlihat dengan alat";
+    if(alt < 0){
+      statusEl.innerText = "🌑 Bulan di bawah horizon";
+      prediksiEl.innerText = "Tidak mungkin rukyat";
     } else {
-      vis = "Tidak terlihat";
+
+      const imkan = (alt>=3 && elo>=6.4 && age>=8);
+      const q = alt - (0.1018*Math.sqrt(elo));
+
+      let vis = "";
+      if(q > 0.216){
+        vis = "Mudah terlihat";
+      } else if(q > -0.014){
+        vis = "Terlihat dengan alat";
+      } else {
+        vis = "Tidak terlihat";
+      }
+
+      statusEl.innerText = imkan
+        ? "🌙 Hilal memenuhi kriteria"
+        : "⚠️ Hilal belum memenuhi kriteria";
+
+      prediksiEl.innerText = vis;
     }
 
-    statusEl.innerText = imkan
-      ? "🌙 Hilal memenuhi kriteria"
-      : "⚠️ Hilal belum memenuhi kriteria";
+    return data;
 
-    prediksiEl.innerText = vis;
+  } catch(err){
+    console.error("Error hitung hilal:", err);
+    statusEl.innerText = "❌ Error perhitungan";
+  } finally {
+    isCalculating = false; // 🔥 PASTI dilepas
   }
-
-  // 🔓 BUKA LOCK
-  isCalculating = false;
-
-  return data;
 }
 
 // ================= JALUR BULAN =================
