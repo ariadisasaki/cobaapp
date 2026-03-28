@@ -81,29 +81,57 @@ function koreksiParallax(alt){
 function getHijri(lat, lon){
   const now = new Date();
 
-  // 🔹 TAMBAHAN 1: KEY HARI INI
+  // ================= LOCK SYSTEM =================
   const todayKey = now.toDateString();
   const saved = JSON.parse(localStorage.getItem(HIJRI_KEY));
 
-  // 🔒 TAMBAHAN 2: CEK LOCK
   if(saved && saved.date === todayKey){
     document.getElementById('hijri').innerText = saved.value;
     return;
   }
 
+  // ================= MAGHRIB =================
   const maghribData = hitungMaghrib(lat, lon);
   const maghrib = maghribData ? maghribData.decimal : 18;
 
   const jam = now.getHours() + now.getMinutes()/60;
+
   let tambahHari = 0;
 
-  // 🔹 BAGIAN MAGHRIB
+  // ================= SETELAH MAGHRIB =================
   if(jam >= maghrib){
 
-    // ⚠️ SEDERHANAKAN dulu biar stabil
-    tambahHari = 1;
+    // 🔹 waktu maghrib FIX
+    const maghribHour = Math.floor(maghrib);
+    const maghribMinute = Math.floor((maghrib - maghribHour)*60);
 
-    // 🔹 HITUNG HASIL
+    const waktuMaghrib = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      maghribHour,
+      maghribMinute,
+      0, 0
+    );
+
+    // 🔹 hitung hilal di waktu maghrib
+    const hilal = hitungHilalCore(lat, lon, waktuMaghrib);
+
+    // 🔹 kriteria MABIMS
+    const bisaRukyat = (
+      hilal.alt >= 3 &&
+      hilal.elo >= 6.4 &&
+      hilal.age >= 8
+    );
+
+    // 🔹 LOGIKA BULAN
+    if(tanggalHijriGlobal >= 29){
+      tambahHari = bisaRukyat ? 1 : 0;
+    } else {
+      tambahHari = 1;
+    }
+
+    // ================= HITUNG HIJRI =================
     let jd = Math.floor((now.getTime()/86400000)+2440587.5) + tambahHari;
     let l = jd - 1948440 + 10632;
     let n = Math.floor((l-1)/10631);
@@ -125,7 +153,7 @@ function getHijri(lat, lon){
 
     const hasil = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 
-    // 🔒 TAMBAHAN 3: SIMPAN LOCK
+    // 🔒 SIMPAN LOCK
     localStorage.setItem(HIJRI_KEY, JSON.stringify({
       date: todayKey,
       value: hasil
@@ -135,7 +163,7 @@ function getHijri(lat, lon){
     return;
   }
 
-  // 🔹 SEBELUM MAGHRIB (NORMAL)
+  // ================= SEBELUM MAGHRIB =================
   let jd = Math.floor((now.getTime()/86400000)+2440587.5);
   let l = jd - 1948440 + 10632;
   let n = Math.floor((l-1)/10631);
