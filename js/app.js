@@ -50,6 +50,7 @@ window.onload = () => {
     }
   }, { once:true });
 };
+
 // ================= JAM =================
 function startClock(){
   setInterval(()=>{
@@ -193,6 +194,9 @@ function getLocation(){
 
     // 🔹 Auto update hilal setiap 1 menit
     setInterval(()=> hitungHilal(lat, lon), 1*60*1000);
+    setInterval(()=>{
+      getHijri(currentLat, currentLon);
+    }, 60 * 1000);
 
   }, ()=>{
     const lat=-8.5833, lon=116.1167;
