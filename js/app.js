@@ -458,7 +458,11 @@ function autoReloadAtMaghrib(lat, lon){
 
   setTimeout(()=>{
     localStorage.setItem(todayKey, now.toDateString());
-    location.reload();
+    
+    console.log("🌙 Maghrib tercapai, update Hijri");
+    
+    getHijri(lat, lon); // 🔥 update tanpa reload
+  
   }, diff);
 }
 
