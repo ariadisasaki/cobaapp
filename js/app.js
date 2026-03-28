@@ -209,8 +209,8 @@ function getLocation(){
     startCam();
     autoReloadAtMaghrib(lat, lon);
 
-    // 🔹 Auto update hilal setiap 1 menit
-    setInterval(()=> hitungHilal(lat, lon), 1*60*1000);
+    // 🔹 Auto update hilal setiap 5 detik
+    setInterval(()=> hitungHilal(currentLat, currentLon), 5000);
 
   }, ()=>{
     const lat=-8.5833, lon=116.1167;
