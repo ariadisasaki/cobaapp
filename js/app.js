@@ -82,7 +82,6 @@ function koreksiParallax(alt){
 function getHijri(lat, lon){
   const now = new Date();
 
-  // ================= LOCK SYSTEM =================
   const todayKey = now.toDateString();
   const saved = JSON.parse(localStorage.getItem(HIJRI_KEY));
 
@@ -91,48 +90,11 @@ function getHijri(lat, lon){
     return;
   }
 
-  // ================= MAGHRIB =================
   const maghribData = hitungMaghrib(lat, lon);
   const maghrib = maghribData ? maghribData.decimal : 18;
 
   const jam = now.getHours() + now.getMinutes()/60;
 
-  // ================= HITUNG HIJRI DASAR =================
-  let jd0 = Math.floor((now.getTime()/86400000)+2440587.5);
-  let l0 = jd0 - 1948440 + 10632;
-  let n0 = Math.floor((l0-1)/10631);
-  l0 = l0 - 10631*n0 + 354;
-  let j0 = (Math.floor((10985-l0)/5316))*(Math.floor((50*l0)/17719))
-        +(Math.floor(l0/5670))*(Math.floor((43*l0)/15238));
-  l0 = l0 - (Math.floor((30-j0)/15))*(Math.floor((17719*j0)/50))
-        - (Math.floor(j0/16))*(Math.floor((15238*j0)/43)) + 29;
-
-  const m0 = Math.floor((24*l0)/709);
-  const d0 = l0 - Math.floor((709*m0)/24);
-  const y0 = 30*n0 + j0 - 30;
-
-  let tambahHari = 0;
-
-  // ================= SETELAH MAGHRIB =================
-  function getHijri(lat, lon){
-  const now = new Date();
-
-  // ================= LOCK HARIAN =================
-  const todayKey = now.toDateString();
-  const saved = JSON.parse(localStorage.getItem(HIJRI_KEY));
-
-  if(saved && saved.date === todayKey){
-    document.getElementById('hijri').innerText = saved.value;
-    return;
-  }
-
-  // ================= MAGHRIB =================
-  const maghribData = hitungMaghrib(lat, lon);
-  const maghrib = maghribData ? maghribData.decimal : 18;
-
-  const jam = now.getHours() + now.getMinutes()/60;
-
-  // ================= HITUNG HIJRI DASAR =================
   let jd0 = Math.floor((now.getTime()/86400000)+2440587.5);
   let l0 = jd0 - 1948440 + 10632;
   let n0 = Math.floor((l0-1)/10631);
@@ -146,13 +108,10 @@ function getHijri(lat, lon){
 
   const m0 = Math.floor((24*l0)/709);
   const d0 = l0 - Math.floor((709*m0)/24);
-  const y0 = 30*n0 + j0 - 30;
 
   let tambahHari = 0;
 
-  // ================= LOGIKA SETELAH MAGHRIB =================
   if(jam >= maghrib && d0 >= 29){
-
     const maghribHour = Math.floor(maghrib);
     const maghribMinute = Math.floor((maghrib - maghribHour)*60);
 
@@ -161,8 +120,7 @@ function getHijri(lat, lon){
       now.getMonth(),
       now.getDate(),
       maghribHour,
-      maghribMinute,
-      0, 0
+      maghribMinute
     );
 
     const hilal = hitungHilalCore(lat, lon, waktuMaghrib);
@@ -174,11 +132,10 @@ function getHijri(lat, lon){
     );
 
     if(imkan){
-      tambahHari = 1; // 🔥 naik hari jika memenuhi syarat
+      tambahHari = 1;
     }
   }
 
-  // ================= HITUNG FINAL =================
   let jd = jd0 + tambahHari;
   let l = jd - 1948440 + 10632;
   let n = Math.floor((l-1)/10631);
@@ -206,7 +163,6 @@ function getHijri(lat, lon){
 
   const hasil = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 
-  // ================= SIMPAN LOCK =================
   localStorage.setItem(HIJRI_KEY, JSON.stringify({
     date: todayKey,
     value: hasil
