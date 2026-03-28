@@ -27,7 +27,6 @@ body{
   position:relative;
   animation: fadeIn 0.5s ease;
 }
-
 @keyframes fadeIn{
   from{opacity:0; transform:translateY(10px);}
   to{opacity:1; transform:translateY(0);}
@@ -67,20 +66,23 @@ body{
 .status.ok{ background:#1f8f4e; }
 .status.no{ background:#8f1f1f; }
 
-/* ===================== CAMERA WRAPPER ===================== */
+/* ===================== CAMERA WRAPPER (SQUARE) ===================== */
 .camera-wrapper{
   position: relative;
   overflow: hidden;
   border-radius:15px;
   width:100%;
-  height:100vh; /* full screen untuk presisi AR */
+  max-width:400px;      /* optional untuk ukuran square */
+  aspect-ratio: 1/1;    /* PAKSA persegi */
+  margin:20px auto;     /* tengah horizontal */
+  background:#000;
 }
 
 /* VIDEO / CAMERA */
 video{
   width:100%;
   height:100%;
-  object-fit:cover; /* tetap full frame */
+  object-fit:cover;      /* isi penuh persegi */
   border-radius:15px;
   display:block;
   z-index:1;
@@ -92,9 +94,9 @@ video{
   font-size:30px;
   z-index:4;
   pointer-events:none;
-  left:0;
-  top:0;
-  transform: translate(-50%, -50%); /* penting: titik tengah marker = koordinat JS */
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%); /* titik pusat marker = koordinat JS */
   background: transparent !important;
   border: none !important;
   filter: drop-shadow(0 0 6px currentColor);
