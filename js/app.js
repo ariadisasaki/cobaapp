@@ -39,6 +39,47 @@ async function getMagneticDeclination(lat, lon){
 const rad = Math.PI/180;
 const deg = 180/Math.PI;
 
+// ============== HIJRI REALTIME =============
+function updateHijriRealTime(lat, lon){
+    const now = new Date();
+
+    // Hitung Julian Day dasar (UTC midnight)
+    const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const utcMidnight = localMidnight.getTime() - (localMidnight.getTimezoneOffset() * 60000);
+    let jd = Math.floor((utcMidnight / 86400000) + 2440587.5);
+
+    // Hitung hilal saat ini
+    const hilal = hitungHilal(lat, lon, now);
+
+    // Jika hilal memenuhi syarat rukyat, tambahkan 1 hari
+    const bisaRukyat = (hilal.alt >= 3 && hilal.elo >= 6.4 && hilal.age >= 8);
+    if(bisaRukyat) jd += 1;
+
+    // Konversi JD ke tanggal Hijri
+    let l = jd - 1948440 + 10632;
+    let n = Math.floor((l-1)/10631);
+    l = l - 10631*n + 354;
+    let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
+          + (Math.floor(l/5670))*(Math.floor((43*l)/15238));
+    l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
+          - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
+
+    const m = Math.floor((24*l)/709);
+    const d = l - Math.floor((709*m)/24);
+    const y = 30*n + j - 30;
+
+    hijriMonthIndex = m - 1;
+    tanggalHijriGlobal = d;
+
+    const bulan = [
+        "Muharram","Safar","Rabiul Awal","Rabiul Akhir",
+        "Jumadil Awal","Jumadil Akhir","Rajab","Syaban",
+        "Ramadhan","Syawal","Zulkaidah","Zulhijjah"
+    ];
+
+    document.getElementById('hijri').innerText = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
+}
+
 // ================= INIT =================
 window.onload = () => {
   startClock();
@@ -225,7 +266,7 @@ function getLocation(){
         // 🔹 Ambil declination global
         await getMagneticDeclination(lat, lon);
 
-        getHijri(lat, lon);
+        updateHijriRealTime(lat, lon);
         hitungHilal(lat, lon);
         startCam();
         autoReloadAtMaghrib(lat, lon);
@@ -233,7 +274,7 @@ function getLocation(){
         setInterval(()=>{
             if(currentLat && currentLon){
                 hitungHilal(currentLat, currentLon);
-                getHijri(currentLat, currentLon);
+                updateHijriRealTime(currentLat, currentLon);
             }
         }, 10 * 1000);
 
@@ -244,7 +285,7 @@ function getLocation(){
 
         declinationGlobal = 0; // fallback jika gagal GPS
 
-        getHijri(lat, lon);
+        updateHijriRealTime(lat, lon);
         hitungHilal(lat, lon);
         startCam();
         autoReloadAtMaghrib(lat, lon);
