@@ -209,8 +209,8 @@ function getLocation(){
     autoReloadAtMaghrib(lat, lon);
 
     // 🔹 Auto update hilal setiap 1 menit
-    setInterval(()=> hitungHilal(lat, lon), 1*60*1000);
     setInterval(()=>{
+      hitungHilal(currentLat, currentLon);
       getHijri(currentLat, currentLon);
     }, 60 * 1000);
 
