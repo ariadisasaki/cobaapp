@@ -97,17 +97,19 @@ function getHijri(lat, lon){
 
   const jam = now.getHours() + now.getMinutes()/60;
 
-  // ================= HITUNG HIJRI DASAR =================
-  let jd0 = Math.floor((now.getTime()/86400000)+2440587.5);
+  // ================= JD DASAR (TIDAK LOMPAT) =================
+  let jd0 = Math.floor((now.getTime()/86400000) + 2440587.5);
+
+  // ================= KONVERSI HIJRI DASAR =================
   let l0 = jd0 - 1948440 + 10632;
-  let n0 = Math.floor((l0-1)/10631);
+  let n0 = Math.floor((l0 - 1)/10631);
   l0 = l0 - 10631*n0 + 354;
 
   let j0 = (Math.floor((10985-l0)/5316))*(Math.floor((50*l0)/17719))
-        +(Math.floor(l0/5670))*(Math.floor((43*l0)/15238));
+         + (Math.floor(l0/5670))*(Math.floor((43*l0)/15238));
 
   l0 = l0 - (Math.floor((30-j0)/15))*(Math.floor((17719*j0)/50))
-        - (Math.floor(j0/16))*(Math.floor((15238*j0)/43)) + 29;
+         - (Math.floor(j0/16))*(Math.floor((15238*j0)/43)) + 29;
 
   const m0 = Math.floor((24*l0)/709);
   const d0 = l0 - Math.floor((709*m0)/24);
@@ -145,12 +147,13 @@ function getHijri(lat, lon){
 
   // ================= HITUNG FINAL =================
   let jd = jd0 + tambahHari;
+
   let l = jd - 1948440 + 10632;
   let n = Math.floor((l-1)/10631);
   l = l - 10631*n + 354;
 
   let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
-        +(Math.floor(l/5670))*(Math.floor((43*l)/15238));
+        + (Math.floor(l/5670))*(Math.floor((43*l)/15238));
 
   l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
         - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
