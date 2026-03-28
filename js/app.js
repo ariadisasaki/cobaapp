@@ -310,11 +310,6 @@ function hitungHilalFuture(lat, lon, time){
   return hitungHilalCore(lat, lon, time);
 }
 
-// ================= UTIL =================
-function normalize360(x){
-  return (x % 360 + 360) % 360;
-}
-
 // ================= HITUNG HILAL CORE =================
 function hitungHilalCore(lat, lon, customTime=null){
   const rad = Math.PI/180;
@@ -329,12 +324,13 @@ function hitungHilalCore(lat, lon, customTime=null){
   const T = (JD - 2451545)/36525;
 
   // ================= OBLIQUITY + NUTATION =================
+  const U = T/100;
   let epsilon0 = 23 + 26/60 + 21.448/3600
     - (46.8150*T + 0.00059*T*T - 0.001813*T*T*T)/3600;
 
-  const L = normalize360(280.4665 + 36000.7698*T);
-  const Lm = normalize360(218.3165 + 481267.8813*T);
-  const omega = normalize360(125.04452 - 1934.136261*T);
+  const L = (280.4665 + 36000.7698*T) % 360;
+  const Lm = (218.3165 + 481267.8813*T) % 360;
+  const omega = (125.04452 - 1934.136261*T) % 360;
 
   const deltaPsi = (-17.20*Math.sin(omega*rad) - 1.32*Math.sin(2*L*rad)
                    -0.23*Math.sin(2*Lm*rad) + 0.21*Math.sin(2*omega*rad))/3600;
@@ -345,28 +341,20 @@ function hitungHilalCore(lat, lon, customTime=null){
   const epsilon = epsilon0 + deltaEps;
 
   // ================= MATAHARI =================
-  const M = normalize360(357.52911 + 35999.05029*T);
-
+  const M = (357.52911 + 35999.05029*T) % 360;
   const C = (1.914602 - 0.004817*T - 0.000014*T*T)*Math.sin(M*rad)
           + (0.019993 - 0.000101*T)*Math.sin(2*M*rad)
           + 0.000289*Math.sin(3*M*rad);
 
-  const sunLong = normalize360(L + C + deltaPsi);
-
-  const sunRA = normalize360(Math.atan2(
-    Math.cos(epsilon*rad)*Math.sin(sunLong*rad),
-    Math.cos(sunLong*rad)
-  )*deg);
-
-  const sunDec = Math.asin(
-    Math.sin(epsilon*rad)*Math.sin(sunLong*rad)
-  )*deg;
+  const sunLong = L + C + deltaPsi;
+  const sunRA = Math.atan2(Math.cos(epsilon*rad)*Math.sin(sunLong*rad), Math.cos(sunLong*rad))*deg;
+  const sunDec = Math.asin(Math.sin(epsilon*rad)*Math.sin(sunLong*rad))*deg;
 
   // ================= BULAN =================
-  const D = normalize360(297.8501921 + 445267.1114034*T);
-  const Mm = normalize360(134.9633964 + 477198.8675055*T);
+  const D = (297.8501921 + 445267.1114034*T) % 360;
+  const Mm = (134.9633964 + 477198.8675055*T) % 360;
   const Ms = M;
-  const F  = normalize360(93.2720950 + 483202.0175233*T);
+  const F  = (93.2720950 + 483202.0175233*T) % 360;
 
   let lonMoon =
     Lm
@@ -386,13 +374,13 @@ function hitungHilalCore(lat, lon, customTime=null){
     + 0.277*Math.sin((Mm - F)*rad)
     + 0.173*Math.sin((2*D - F)*rad);
 
-  lonMoon = normalize360(lonMoon + deltaPsi);
+  lonMoon += deltaPsi;
 
   // ================= RA DEC BULAN =================
-  const moonRA = normalize360(Math.atan2(
+  const moonRA = Math.atan2(
     Math.sin(lonMoon*rad)*Math.cos(epsilon*rad) - Math.tan(latMoon*rad)*Math.sin(epsilon*rad),
     Math.cos(lonMoon*rad)
-  )*deg);
+  )*deg;
 
   const moonDec = Math.asin(
     Math.sin(latMoon*rad)*Math.cos(epsilon*rad)
@@ -400,13 +388,11 @@ function hitungHilalCore(lat, lon, customTime=null){
   )*deg;
 
   // ================= SIDEREAL =================
-  const GMST = normalize360(280.46061837 + 360.98564736629*(JD-2451545));
-  const LST = normalize360(GMST + lon);
-  let HA = normalize360(LST - moonRA);
+  const GMST = (280.46061837 + 360.98564736629*(JD-2451545)) % 360;
+  const LST = GMST + lon;
+  const HA = (LST - moonRA);
 
-  if(HA > 180) HA -= 360;
-
-  // ================= ALT AZ =================
+  // ================= TOPOCENTRIC ALT AZ =================
   let alt = Math.asin(
     Math.sin(lat*rad)*Math.sin(moonDec*rad)
     + Math.cos(lat*rad)*Math.cos(moonDec*rad)*Math.cos(HA*rad)
@@ -417,7 +403,7 @@ function hitungHilalCore(lat, lon, customTime=null){
     Math.tan(moonDec*rad)*Math.cos(lat*rad) - Math.sin(lat*rad)*Math.cos(HA*rad)
   )*deg;
 
-  azi = normalize360(azi);
+  if(azi < 0) azi += 360;
 
   // ================= KOREKSI =================
   alt = koreksiParallax(alt);
@@ -429,11 +415,12 @@ function hitungHilalCore(lat, lon, customTime=null){
     + Math.cos(sunDec*rad)*Math.cos(moonDec*rad)*Math.cos((sunRA - moonRA)*rad)
   )*deg;
 
-  const age = elo/12.19*24;
+  const age = elo/12.19*24; // usia bulan dalam jam
 
   // ================= ILUMINASI =================
   const illumination = (1 - Math.cos(elo * rad)) / 2 * 100;
 
+  // ================= OUTPUT BERSIH =================
   return { alt, azi, elo, age, illumination };
 }
 
