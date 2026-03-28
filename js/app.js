@@ -1,5 +1,5 @@
-// ================= FINAL ULTRA COMPLETE - HILAL CHECKER =================
-console.log("FINAL ULTRA COMPLETE - HILAL CHECKER");
+// ================= FINAL FIXED HILAL CHECKER =================
+console.log("FINAL FIXED HILAL CHECKER");
 
 // ================= GLOBAL =================
 let hijriMonthIndex = 0;
@@ -80,47 +80,45 @@ function startClock(){
 // ================= GPS =================
 function getLocation(){
   navigator.geolocation.getCurrentPosition(pos=>{
-    currentLat = pos.coords.latitude;
-    currentLon = pos.coords.longitude;
-
-    document.getElementById("loc").innerText =
-      `${currentLat.toFixed(6)}, ${currentLon.toFixed(6)}`;
-
-    getHijri(currentLat, currentLon);
-    hitungHilal(currentLat, currentLon);
-
-    startCam();
-
-    // 🔥 Update hilal tiap 10 detik
-    setInterval(()=>{
-      hitungHilal(currentLat, currentLon);
-    },10000);
-
-    // 🔥 Update Hijri tiap 1 menit (anti lompat)
-    setInterval(()=>{
-      getHijri(currentLat, currentLon);
-    },60000);
-
+    setupLocation(pos.coords.latitude, pos.coords.longitude);
   }, err=>{
     console.warn("GPS gagal, pakai default");
-    currentLat = -8.5833;
-    currentLon = 116.1167;
+    setupLocation(-8.5833, 116.1167);
   }, {enableHighAccuracy:true});
+}
+
+function setupLocation(lat, lon){
+  currentLat = lat;
+  currentLon = lon;
+
+  document.getElementById("loc").innerText =
+    `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+
+  const locStatus = document.getElementById("locStatus");
+  if(locStatus) locStatus.innerText = "✅ Lokasi siap";
+
+  getHijri(lat, lon);
+  hitungHilal(lat, lon);
+  startCam();
+
+  setInterval(()=>{
+    hitungHilal(currentLat, currentLon);
+  },10000);
+
+  setInterval(()=>{
+    getHijri(currentLat, currentLon);
+  },60000);
 }
 
 // ================= HIJRI =================
 function getHijri(lat, lon){
-
   const now = new Date();
   const nowTime = now.getTime();
 
-  // 🔒 Anti update terlalu cepat
   if(nowTime - lastHijriUpdate < 60000) return;
   lastHijriUpdate = nowTime;
 
   const key = new Date().toDateString();
-
-  // 🔒 Lock harian
   if(localStorage.getItem(HIJRI_KEY) === key) return;
 
   const hilal = hitungHilalCore(lat, lon);
@@ -135,7 +133,7 @@ function getHijri(lat, lon){
     `Tanggal Hijriah: ${tanggalHijriGlobal}`;
 }
 
-// ================= HILAL WRAPPER =================
+// ================= HILAL =================
 function hitungHilal(lat, lon, customTime=null){
 
   if(isCalculating) return;
@@ -152,28 +150,30 @@ function hitungHilal(lat, lon, customTime=null){
 
     updateStatus(data);
 
-    return data;
+    // 🔥 paksa update AR
+    updateAR(0,0,0);
+
+    const arText = document.getElementById("arStatus");
+    if(arText) arText.innerText = "🎯 Hilal terdeteksi";
 
   } catch(e){
     console.error("Error hilal:", e);
     document.getElementById("status").innerText =
       "❌ Error perhitungan";
-  } finally{
-    isCalculating = false;
   }
+
+  isCalculating = false;
 }
 
-// ================= CORE PERHITUNGAN =================
+// ================= CORE =================
 function hitungHilalCore(lat, lon, customTime=null){
 
   const now = customTime ? new Date(customTime) : new Date();
 
   const JD_UTC = (now.getTime()/86400000)+2440587.5;
   const JD = JD_UTC + getDeltaT()/86400;
-
   const T = (JD - 2451545)/36525;
 
-  // ===== MATAHARI =====
   const L0 = normalize360(280.4665 + 36000.7698*T);
   const M = normalize360(357.52911 + 35999.05029*T);
 
@@ -191,7 +191,6 @@ function hitungHilalCore(lat, lon, customTime=null){
     Math.sin(23.44*rad)*Math.sin(sunLong*rad)
   )*deg;
 
-  // ===== BULAN (APPROX HIGH ACCURACY) =====
   const Lm = normalize360(218.316 + 13.176396*(JD - 2451545));
   const Mm = normalize360(134.963 + 13.064993*(JD - 2451545));
 
@@ -208,20 +207,17 @@ function hitungHilalCore(lat, lon, customTime=null){
     Math.cos(moonLat*rad)*Math.sin(23.44*rad)*Math.sin(moonLong*rad)
   )*deg;
 
-  // ===== SIDEREAL =====
   const GMST = normalize360(280.46061837 + 360.98564736629*(JD - 2451545));
   const LST = normalize360(GMST + lon);
 
   let HA = normalize360(LST - moonRA);
   if(HA > 180) HA -= 360;
 
-  // ===== ALTITUDE =====
   let alt = Math.asin(
     Math.sin(lat*rad)*Math.sin(moonDec*rad) +
     Math.cos(lat*rad)*Math.cos(moonDec*rad)*Math.cos(HA*rad)
   )*deg;
 
-  // ===== AZIMUTH =====
   let azi = Math.atan2(
     -Math.sin(HA*rad),
     Math.tan(moonDec*rad)*Math.cos(lat*rad) -
@@ -230,11 +226,9 @@ function hitungHilalCore(lat, lon, customTime=null){
 
   azi = normalize360(azi);
 
-  // ===== KOREKSI =====
   alt = koreksiParallax(alt);
   alt = koreksiRefraction(alt);
 
-  // ===== ELONGASI =====
   const elo = Math.acos(
     Math.sin(sunDec*rad)*Math.sin(moonDec*rad) +
     Math.cos(sunDec*rad)*Math.cos(moonDec*rad)*Math.cos((sunRA - moonRA)*rad)
@@ -262,9 +256,23 @@ function updateStatus(data){
 
 // ================= SENSOR =================
 function initSensor(){
-  window.addEventListener("deviceorientation", e=>{
+
+  function handler(e){
     updateAR(e.alpha||0, e.beta||0, e.gamma||0);
-  });
+  }
+
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    document.body.addEventListener('click', () => {
+      DeviceOrientationEvent.requestPermission()
+        .then(res=>{
+          if(res === 'granted'){
+            window.addEventListener("deviceorientation", handler);
+          }
+        });
+    }, {once:true});
+  } else {
+    window.addEventListener("deviceorientation", handler);
+  }
 }
 
 // ================= AR =================
@@ -283,7 +291,6 @@ function updateAR(alpha, beta, gamma){
   const targetX = window.innerWidth/2 + deltaAz*2;
   const targetY = window.innerHeight/2 - hilalData.alt*3;
 
-  // 🔥 smoothing
   smoothX += (targetX - smoothX)*0.08;
   smoothY += (targetY - smoothY)*0.08;
 
