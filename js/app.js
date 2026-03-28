@@ -210,8 +210,10 @@ function getLocation(){
 
     // 🔹 Auto update hilal setiap 1 menit
     setInterval(()=>{
-      hitungHilal(currentLat, currentLon);
-      getHijri(currentLat, currentLon);
+      if(currentLat && currentLon){
+        hitungHilal(currentLat, currentLon);
+        getHijri(currentLat, currentLon);
+      }
     }, 60 * 1000);
 
   }, ()=>{
