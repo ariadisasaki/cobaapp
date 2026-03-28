@@ -79,19 +79,67 @@ function koreksiParallax(alt){
 // ================= HIJRI =================
 function getHijri(lat, lon){
   const now = new Date();
+
+  // ================== WAKTU ==================
+  const jam = now.getHours() + now.getMinutes()/60;
+
+  // ================== MAGHRIB ==================
   const maghribData = hitungMaghrib(lat, lon);
   const maghrib = maghribData ? maghribData.decimal : 18;
 
-  const jam = now.getHours() + now.getMinutes()/60;
+  // ================== TANGGAL DASAR (FIX) ==================
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // ================== KEY CACHE ==================
+  const key = "hijriStatus_" + today.toDateString();
+
   let tambahHari = 0;
 
+  // ================== LOGIKA SETELAH MAGHRIB ==================
   if(jam >= maghrib){
-    const hilal = hitungHilal(lat, lon);
-    const bisaRukyat = hilal.alt >= 3 && hilal.elo >= 6.4 && hilal.age >= 8;
-    if(bisaRukyat) tambahHari = 1;
+
+    // 🔹 Cek apakah sudah ada keputusan tersimpan
+    const saved = localStorage.getItem(key);
+
+    if(saved !== null){
+      tambahHari = parseInt(saved);
+      console.log("🔒 Pakai cache hijri:", tambahHari);
+
+    } else {
+
+      // ================== HITUNG HILAL SAAT MAGHRIB ==================
+      const maghribTime = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        Math.floor(maghrib),
+        Math.floor((maghrib % 1) * 60),
+        0, 0
+      );
+
+      const hilal = hitungHilal(lat, lon, maghribTime);
+
+      console.log("🌙 Hilal saat maghrib:", hilal);
+
+      const bisaRukyat = (
+        hilal.alt >= 3 &&
+        hilal.elo >= 6.4 &&
+        hilal.age >= 8
+      );
+
+      tambahHari = bisaRukyat ? 1 : 0;
+
+      // 🔒 SIMPAN KEPUTUSAN (PENTING!)
+      localStorage.setItem(key, tambahHari);
+
+      console.log("💾 Simpan keputusan hijri:", tambahHari);
+    }
   }
 
-  let jd = Math.floor((now.getTime()/86400000)+2440587.5) + tambahHari;
+  // ================== JULIAN DAY (FIX HARI) ==================
+  let jd = Math.floor((today.getTime()/86400000) + 2440587.5) + tambahHari;
+
+  // ================== KONVERSI HIJRI ==================
   let l = jd - 1948440 + 10632;
   let n = Math.floor((l-1)/10631);
   l = l - 10631*n + 354;
@@ -104,12 +152,18 @@ function getHijri(lat, lon){
   const d = l - Math.floor((709*m)/24);
   const y = 30*n + j - 30;
 
-  hijriMonthIndex = m-1;
+  // ================== GLOBAL ==================
+  hijriMonthIndex = m - 1;
   tanggalHijriGlobal = d;
 
-  const bulan = ["Muharram","Safar","Rabiul Awal","Rabiul Akhir","Jumadil Awal","Jumadil Akhir",
-                 "Rajab","Syaban","Ramadhan","Syawal","Zulkaidah","Zulhijjah"];
-  document.getElementById('hijri').innerText = `${d} ${bulan[hijriMonthIndex]} ${y} H`;
+  const bulan = [
+    "Muharram","Safar","Rabiul Awal","Rabiul Akhir",
+    "Jumadil Awal","Jumadil Akhir","Rajab","Syaban",
+    "Ramadhan","Syawal","Zulkaidah","Zulhijjah"
+  ];
+
+  document.getElementById('hijri').innerText =
+    `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 }
 
 // ================= GPS =================
