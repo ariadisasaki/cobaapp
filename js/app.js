@@ -310,6 +310,11 @@ function hitungHilalFuture(lat, lon, time){
   return hitungHilalCore(lat, lon, time);
 }
 
+// ================= UTIL =================
+function normalize360(x){
+  return (x % 360 + 360) % 360;
+}
+
 // ================= HITUNG HILAL CORE =================
 function hitungHilalCore(lat, lon, customTime=null){
   const rad = Math.PI/180;
