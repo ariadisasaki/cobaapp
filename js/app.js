@@ -136,11 +136,27 @@ function getHijri(lat, lon){
       hilal.age >= 8
     );
 
-    // 🔥 pakai d0 (bukan global lama)
+    // 🔹 hitung hijri dasar ulang (ringan, aman)
+    const now = new Date();
+    let jd0 = Math.floor((now.getTime()/86400000)+2440587.5);
+    let l0 = jd0 - 1948440 + 10632;
+    let n0 = Math.floor((l0-1)/10631);
+    l0 = l0 - 10631*n0 + 354;
+    let j0 = (Math.floor((10985-l0)/5316))*(Math.floor((50*l0)/17719))
+      +(Math.floor(l0/5670))*(Math.floor((43*l0)/15238));
+    l0 = l0 - (Math.floor((30-j0)/15))*(Math.floor((17719*j0)/50))
+      - (Math.floor(j0/16))*(Math.floor((15238*j0)/43)) + 29;
+    
+    const m0 = Math.floor((24*l0)/709);
+    const d0 = l0 - Math.floor((709*m0)/24);
+    
+    // 🔥 pakai d0
     if(d0 >= 29){
-      tambahHari = bisaRukyat ? 1 : 0;
+      statusEl.innerText = imkan ? "✅ Imkan Rukyat" : "❌ Istikmal";
+      prediksiEl.innerText = vis;
     } else {
-      tambahHari = 1;
+      statusEl.innerText = "ℹ️ Belum akhir bulan";
+      prediksiEl.innerText = vis;
     }
   }
 
