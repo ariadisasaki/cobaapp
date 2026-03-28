@@ -97,68 +97,109 @@ function koreksiParallax(alt){
 }
 
 // ================= HIJRI =================
-// ===================== HIJRI DENGAN VISIBILITAS HILAL =====================
-async function updateHijri(lat, lon){
-    const now = new Date();
-    const maghrib = await getMaghribTime(lat, lon, now); // fungsi maghrib lokal
-    const hilal = calculateHilal(lat, lon, maghrib); // fungsi tinggi hilal di maghrib
+function getHijri(lat, lon){
+  const now = new Date();
 
-    // threshold visibilitas hilal: 2°–3° biasanya cukup terlihat
-    const hilalVisible = hilal.alt > 2; 
+  // ================== WAKTU ==================
+  const jam = now.getHours() + now.getMinutes()/60;
 
-    // hitung tanggal Hijri saat ini
-    const hijriToday = toHijriDate(now); // fungsi hisab standar
-    const hijriAdjusted = hilalVisible ? addDays(hijriToday,1) : hijriToday;
+  // ================== MAGHRIB ==================
+  const maghribData = hitungMaghrib(lat, lon);
+  const maghrib = maghribData ? maghribData.decimal : 18;
 
-    document.getElementById('tanggalHijri').innerText =
-        `${hijriAdjusted.day} ${hijriAdjusted.monthName} ${hijriAdjusted.year} H`;
+  // ================== TANGGAL DASAR (FIX) ==================
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    console.log("Hijri update:", hijriAdjusted);
-}
+  // ================== KEY CACHE ==================
+  const key = "hijriStatus_" + today.toDateString();
 
-// ===================== HITUNG TINGGI HILAL =====================
-function calculateHilal(lat, lon, date){
-    // gunakan rumus sederhana ketinggian hilal
-    // atau bisa pakai modul hisab yang sudah ada
-    const alt = hilalData.alt; // pakai data hilal global
-    return {alt};
-}
-
-// ===================== WAKTU MAGHRIB LOKAL =====================
-async function getMaghribTime(lat, lon, date){
-    // bisa pakai API atau rumus hisab
-    const api = `https://api.aladhan.com/v1/timings/${Math.floor(date.getTime()/1000)}?latitude=${lat}&longitude=${lon}&method=4`;
-    try{
-        const res = await fetch(api);
-        const data = await res.json();
-        const maghribStr = data.data.timings.Maghrib; // format HH:mm
-        const [h,m] = maghribStr.split(":").map(Number);
-        const maghribDate = new Date(date);
-        maghribDate.setHours(h, m, 0, 0);
-        return maghribDate;
-    }catch{
-        // fallback jam 18:00
-        const fallback = new Date(date);
-        fallback.setHours(18,0,0,0);
-        return fallback;
+  // Hapus cache lama
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith("hijriStatus_") && k !== key){
+      localStorage.removeItem(k);
     }
-}
+  });
 
-// ===================== KONVERSI HISAB KE HIJRI =====================
-function toHijriDate(date){
-    // hisab standar, bisa pakai library
-    // misal: Umm al-Qura approximation
-    const hYear = date.getFullYear() - 579; // contoh sederhana
-    const hMonth = (date.getMonth() + 1) % 12 + 1;
-    const hDay = date.getDate();
-    const monthNames = ["Muharram","Safar","Rabiul Awal","Rabiul Akhir",
-        "Jumadil Awal","Jumadil Akhir","Rajab","Sya'ban","Ramadhan","Syawal","Dzulkaidah","Dzulhijjah"];
-    return {day:hDay, month:hMonth, monthName:monthNames[hMonth-1], year:hYear};
-}
+  let tambahHari = 0;
 
-// ===================== UTILITY =====================
-function addDays(hijriDate, n){
-    return {day: hijriDate.day + n, month: hijriDate.month, monthName: hijriDate.monthName, year: hijriDate.year};
+  // ================== LOGIKA SETELAH MAGHRIB ==================
+  if(jam >= maghrib){
+
+    // 🔹 Cek apakah sudah ada keputusan tersimpan
+    const saved = localStorage.getItem(key);
+
+    if(saved !== null){
+      tambahHari = parseInt(saved);
+      console.log("🔒 Pakai cache hijri:", tambahHari);
+
+    } else {
+
+      // ================== HITUNG HILAL SAAT MAGHRIB ==================
+      const maghribTime = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        Math.floor(maghrib),
+        Math.floor((maghrib % 1) * 60),
+        0, 0
+      );
+
+      const hilal = hitungHilal(lat, lon, maghribTime);
+
+      console.log("🌙 Hilal saat maghrib:", hilal);
+
+      const bisaRukyat = (
+        hilal.alt >= 3 &&
+        hilal.elo >= 6.4 &&
+        hilal.age >= 8
+      );
+
+      tambahHari = bisaRukyat ? 1 : 0;
+
+      // 🔒 SIMPAN KEPUTUSAN (PENTING!)
+      localStorage.setItem(key, tambahHari);
+
+      console.log("💾 Simpan keputusan hijri:", tambahHari);
+    }
+  }
+
+  // ================== JULIAN DAY (FIX HARI + ZONA WAKTU AMAN) ==================
+const localMidnight = new Date(
+  now.getFullYear(),
+  now.getMonth(),
+  now.getDate(),
+  0, 0, 0, 0
+);
+
+const utcMidnight = localMidnight.getTime() - (localMidnight.getTimezoneOffset() * 60000);
+
+let jd = Math.floor((utcMidnight / 86400000) + 2440587.5) + tambahHari;
+
+  // ================== KONVERSI HIJRI ==================
+  let l = jd - 1948440 + 10632;
+  let n = Math.floor((l-1)/10631);
+  l = l - 10631*n + 354;
+  let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
+        +(Math.floor(l/5670))*(Math.floor((43*l)/15238));
+  l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
+        - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
+
+  const m = Math.floor((24*l)/709);
+  const d = l - Math.floor((709*m)/24);
+  const y = 30*n + j - 30;
+
+  // ================== GLOBAL ==================
+  hijriMonthIndex = m - 1;
+  tanggalHijriGlobal = d;
+
+  const bulan = [
+    "Muharram","Safar","Rabiul Awal","Rabiul Akhir",
+    "Jumadil Awal","Jumadil Akhir","Rajab","Syaban",
+    "Ramadhan","Syawal","Zulkaidah","Zulhijjah"
+  ];
+
+  document.getElementById('hijri').innerText =
+    `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 }
 
 // ================= GPS =================
@@ -203,7 +244,7 @@ function getLocation(){
 
         declinationGlobal = 0; // fallback jika gagal GPS
 
-        updateHijri(lat, lon);
+        getHijri(lat, lon);
         hitungHilal(lat, lon);
         startCam();
         autoReloadAtMaghrib(lat, lon);
