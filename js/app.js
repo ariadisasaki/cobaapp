@@ -237,39 +237,65 @@ function hitungHilal(lat, lon, customTime=null){
   const statusEl = document.getElementById('status');
   const prediksiEl = document.getElementById('prediksi');
 
-  // 🔹 Status sementara saat menghitung
+  // ================= STATUS AWAL =================
   statusEl.innerText = "⏳ Menghitung hilal...";
   prediksiEl.innerText = "";
 
+  // ================= HITUNG DATA =================
   const data = hitungHilalCore(lat, lon, customTime);
 
   const { alt, azi, elo, age, illumination } = data;
+
+  // simpan ke global untuk AR
   hilalData.alt = alt;
   hilalData.azi = azi;
 
+  // ================= TAMPILKAN ANGKA =================
   document.getElementById('alt').innerText = alt.toFixed(2);
   document.getElementById('azi').innerText = azi.toFixed(2);
   document.getElementById('elo').innerText = elo.toFixed(2);
   document.getElementById('age').innerText = age.toFixed(1);
   document.getElementById('illum').innerText = illumination.toFixed(2) + " %";
 
+  // ================= LOGIKA VISIBILITAS =================
   if(alt < 0){
-  statusEl.innerText = "🌑 Bulan di bawah horizon";
-  prediksiEl.innerText = "Tidak mungkin rukyat";
-} else {
-  const imkan = (alt>=3 && elo>=6.4 && age>=8);
-  const q = alt - (0.1018*Math.sqrt(elo));
-  const vis = q>0.216 ? "Mudah terlihat"
-            : q>-0.014 ? "Terlihat dengan alat"
-            : "Tidak terlihat";
 
-  prediksiEl.innerText = vis;
+    // ❌ Bulan di bawah ufuk
+    statusEl.innerText = "🌑 Bulan di bawah horizon";
+    prediksiEl.innerText = "Tidak mungkin rukyat";
 
-  // 🔹 opsional: logika tambahan kalau mau
-}
+  } else {
 
-// ✅ INI WAJIB ADA DI LUAR if-else
-return data;
+    // ================= KRITERIA IMKAN RUKYAT =================
+    const imkan = (
+      alt >= 3 &&
+      elo >= 6.4 &&
+      age >= 8
+    );
+
+    // ================= KRITERIA VISIBILITAS (Q VALUE) =================
+    const q = alt - (0.1018 * Math.sqrt(elo));
+
+    let vis = "";
+    if(q > 0.216){
+      vis = "Mudah terlihat";
+    } else if(q > -0.014){
+      vis = "Terlihat dengan alat";
+    } else {
+      vis = "Tidak terlihat";
+    }
+
+    // ================= STATUS UTAMA =================
+    statusEl.innerText = imkan
+      ? "🌙 Hilal memenuhi kriteria (Imkan Rukyat)"
+      : "⚠️ Hilal belum memenuhi kriteria";
+
+    // ================= PREDIKSI =================
+    prediksiEl.innerText = vis;
+  }
+
+  // ================= RETURN =================
+  return data;
 }
 
 // ================= JALUR BULAN =================
