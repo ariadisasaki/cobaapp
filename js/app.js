@@ -214,7 +214,7 @@ function getLocation(){
         hitungHilal(currentLat, currentLon);
         getHijri(currentLat, currentLon);
       }
-    }, 60 * 1000);
+    }, 10 * 1000);
 
   }, ()=>{
     const lat=-8.5833, lon=116.1167;
