@@ -15,8 +15,27 @@ let calibrating = false;
 let currentLat = 0;
 let currentLon = 0;
 let lastPathUpdate = 0;
+let declinationGlobal = 0;
 
-// ================= KONSTANTA =================
+// ============== DEKLINASI ==============
+async function getMagneticDeclination(lat, lon){
+    try {
+        const now = new Date();
+        const response = await fetch(
+            `https://www.ngdc.noaa.gov/geomag-web/calculators/calcDeclination?lat1=${lat}&lon1=${lon}&resultFormat=json&model=WMM`
+        );
+        const data = await response.json();
+        declinationGlobal = data.result[0].declination;
+        console.log("Declination global:", declinationGlobal.toFixed(2), "°");
+        return declinationGlobal;
+    } catch(e){
+        declinationGlobal = 0;
+        console.warn("Declination API gagal, pakai 0°");
+        return 0;
+    }
+}
+
+// ============== KONSTANTA ==============
 const rad = Math.PI/180;
 const deg = 180/Math.PI;
 
@@ -185,49 +204,53 @@ let jd = Math.floor((utcMidnight / 86400000) + 2440587.5) + tambahHari;
 
 // ================= GPS =================
 function getLocation(){
-  navigator.geolocation.getCurrentPosition(async p=>{
-    const lat = p.coords.latitude;
-    const lon = p.coords.longitude;
-    currentLat = lat;
-    currentLon = lon;
+    navigator.geolocation.getCurrentPosition(async p=>{
+        const lat = p.coords.latitude;
+        const lon = p.coords.longitude;
+        currentLat = lat;
+        currentLon = lon;
 
-    document.getElementById('loc').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        document.getElementById('loc').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 
-    try{
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-      const d = await r.json();
-      const a = d.address||{};
-      const lokasi = [a.village||a.town||a.city||"", a.county||"", a.state||"", a.country||""].filter(v=>v).join(", ");
-      document.getElementById('lokasi').innerText = lokasi;
-    }catch{
-      document.getElementById('lokasi').innerText="Lokasi tidak tersedia";
-    }
+        try{
+            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+            const d = await r.json();
+            const a = d.address||{};
+            const lokasi = [a.village||a.town||a.city||"", a.county||"", a.state||"", a.country||""].filter(v=>v).join(", ");
+            document.getElementById('lokasi').innerText = lokasi;
+        }catch{
+            document.getElementById('lokasi').innerText="Lokasi tidak tersedia";
+        }
 
-    getHijri(lat, lon);
-    hitungHilal(lat, lon);
-    startCam();
-    autoReloadAtMaghrib(lat, lon);
+        // 🔹 Ambil declination global
+        await getMagneticDeclination(lat, lon);
 
-    // 🔹 Auto update hilal setiap 1 menit
-    setInterval(()=>{
-      if(currentLat && currentLon){
-        hitungHilal(currentLat, currentLon);
-        getHijri(currentLat, currentLon);
-      }
-    }, 10 * 1000);
+        getHijri(lat, lon);
+        hitungHilal(lat, lon);
+        startCam();
+        autoReloadAtMaghrib(lat, lon);
 
-  }, ()=>{
-    const lat=-8.5833, lon=116.1167;
-    document.getElementById('loc').innerText=`${lat}, ${lon}`;
-    document.getElementById('lokasi').innerText="Lokasi default";
+        setInterval(()=>{
+            if(currentLat && currentLon){
+                hitungHilal(currentLat, currentLon);
+                getHijri(currentLat, currentLon);
+            }
+        }, 10 * 1000);
 
-    getHijri(lat, lon);
-    hitungHilal(lat, lon);
-    startCam();
-    autoReloadAtMaghrib(lat, lon);
+    }, ()=>{
+        const lat=-8.5833, lon=116.1167;
+        document.getElementById('loc').innerText=`${lat}, ${lon}`;
+        document.getElementById('lokasi').innerText="Lokasi default";
 
-    setInterval(()=> hitungHilal(lat, lon), 10*60*1000);
-  },{enableHighAccuracy:true});
+        declinationGlobal = 0; // fallback jika gagal GPS
+
+        getHijri(lat, lon);
+        hitungHilal(lat, lon);
+        startCam();
+        autoReloadAtMaghrib(lat, lon);
+
+        setInterval(()=> hitungHilal(lat, lon), 10*60*1000);
+    },{enableHighAccuracy:true});
 }
 
 // ================= DELTA TIME =================
@@ -494,89 +517,81 @@ function initSensor(){
 
 // ================= AR =================
 function updateAR(alpha, beta, gamma){
-  const marker = document.getElementById('marker');
-  const wrapper = document.querySelector('.camera-wrapper');
-  const azEl = document.getElementById('arAzimuth');  // overlay azimuth
-  const altEl = document.getElementById('arAltitude'); // overlay altitude
-  if(!marker || !wrapper) return;
+    const marker = document.getElementById('marker');
+    const wrapper = document.querySelector('.camera-wrapper');
+    const azEl = document.getElementById('arAzimuth');
+    const altEl = document.getElementById('arAltitude');
+    if(!marker || !wrapper) return;
 
-  const width = wrapper.clientWidth;
-  const height = wrapper.clientHeight;
+    const width = wrapper.clientWidth;
+    const height = wrapper.clientHeight;
 
-  if(smoothX === 0 && smoothY === 0){
-    smoothX = width/2;
-    smoothY = height/2;
-  }
-
-  const heading = (360 - alpha + headingOffset) % 360;
-  const pitch = beta || 0;
-  const roll  = gamma || 0;
-
-  // hitung delta dari azimuth & altitude hilal
-  let deltaAz  = hilalData.azi - heading;
-  let deltaAlt = hilalData.alt - pitch;
-
-  // normalize
-  if(deltaAz > 180) deltaAz -= 360;
-  if(deltaAz < -180) deltaAz += 360;
-
-  deltaAz  = Math.max(-45, Math.min(45, deltaAz));
-  deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
-
-  // target posisi marker di layar
-  let targetX = width/2 + deltaAz * 2 + roll*0.5;
-  let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
-
-  targetX = Math.max(30, Math.min(width-30, targetX));
-  targetY = Math.max(40, Math.min(height-40, targetY));
-
-  // smoothing
-  smoothX += (targetX - smoothX) * 0.08;
-  smoothY += (targetY - smoothY) * 0.06;
-
-  // update posisi marker
-  marker.style.left = smoothX + "px";
-  marker.style.top  = smoothY + "px";
-
-  // update warna marker & beep
-  const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
-  if(error < 5){
-    marker.style.color = "lime";
-    if(!beepCooldown){
-      playBeep(1200, 200);
-      navigator.vibrate && navigator.vibrate(150);
-      beepCooldown = true;
-      setTimeout(()=> beepCooldown = false, 1000);
+    if(smoothX === 0 && smoothY === 0){
+        smoothX = width/2;
+        smoothY = height/2;
     }
-  } else if(error < 15){
-    marker.style.color = "yellow";
-  } else {
-    marker.style.color = "red";
-  }
 
-  // 🔹 Update overlay AR untuk azimuth & altitude hilal
-  if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
-  if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
+    const localOffset = headingOffset || 0; // kalibrasi perangkat
+    const heading = (360 - alpha + localOffset + declinationGlobal) % 360;
+    const pitch = beta || 0;
+    const roll  = gamma || 0;
 
-  if(Date.now() - lastPathUpdate > 2000){
-  lastPathUpdate = Date.now();
+    let deltaAz  = hilalData.azi - heading;
+    let deltaAlt = hilalData.alt - pitch;
 
-  const path = generateHilalPath(currentLat, currentLon);
+    if(deltaAz > 180) deltaAz -= 360;
+    if(deltaAz < -180) deltaAz += 360;
 
-  path.forEach(p=>{
-    const dot = document.createElement("div");
-    dot.className = "hilal-path-dot";
+    deltaAz  = Math.max(-45, Math.min(45, deltaAz));
+    deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
 
-    const dx = (p.azi - heading) * 2;
-    const dy = (p.alt - pitch) * -2;
+    let targetX = width/2 + deltaAz * 2 + roll*0.5;
+    let targetY = height/2 - deltaAlt * 2 - pitch*0.3;
 
-    dot.style.left = (width/2 + dx) + "px";
-    dot.style.top  = (height/2 + dy) + "px";
+    targetX = Math.max(30, Math.min(width-30, targetX));
+    targetY = Math.max(40, Math.min(height-40, targetY));
 
-    wrapper.appendChild(dot);
-    setTimeout(()=>dot.remove(),1500);
-  });
-}
+    smoothX += (targetX - smoothX) * 0.08;
+    smoothY += (targetY - smoothY) * 0.06;
+
+    marker.style.left = smoothX + "px";
+    marker.style.top  = smoothY + "px";
+
+    const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
+    if(error < 5){
+        marker.style.color = "lime";
+        if(!beepCooldown){
+            playBeep(1200, 200);
+            navigator.vibrate && navigator.vibrate(150);
+            beepCooldown = true;
+            setTimeout(()=> beepCooldown = false, 1000);
+        }
+    } else if(error < 15){
+        marker.style.color = "yellow";
+    } else {
+        marker.style.color = "red";
+    }
+
+    if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
+    if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
+
+    if(Date.now() - lastPathUpdate > 2000){
+        lastPathUpdate = Date.now();
+        const path = generateHilalPath(currentLat, currentLon);
+        path.forEach(p=>{
+            const dot = document.createElement("div");
+            dot.className = "hilal-path-dot";
+
+            const dx = (p.azi - heading) * 2;
+            const dy = (p.alt - pitch) * -2;
+
+            dot.style.left = (width/2 + dx) + "px";
+            dot.style.top  = (height/2 + dy) + "px";
+
+            wrapper.appendChild(dot);
+            setTimeout(()=>dot.remove(),1500);
+        });
+    }
 }
 
 // ================= KALIBRASI KOMPAS =================
