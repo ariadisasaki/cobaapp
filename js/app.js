@@ -173,15 +173,14 @@ function cariIjtima(lat, lon){
   let minElo = 999;
   let waktuIjtima = null;
 
-  // 🔍 scan ±1 hari (per 5 menit)
-  for(let i = -144; i <= 144; i++){ // 144 x 10 menit = 24 jam
-    let t = new Date(now.getTime() + i * 10 * 60000);
+  // 🔥 scan ±5 hari (step 1 menit)
+  for(let i = -7200; i <= 7200; i++){
+    let t = new Date(now.getTime() + i * 60000);
 
     let data = hitungHilalCore(lat, lon, t);
-    let elo = data.elo;
 
-    if(elo < minElo){
-      minElo = elo;
+    if(data.elo < minElo){
+      minElo = data.elo;
       waktuIjtima = t;
     }
   }
