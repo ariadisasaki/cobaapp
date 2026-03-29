@@ -18,6 +18,10 @@ let currentLon = 0;
 let lastPathUpdate = 0;
 let declinationGlobal = 0;
 let ijtimaCache = null;
+const saved = localStorage.getItem("ijtima");
+if(saved){
+  ijtimaCache = new Date(saved);
+}
 
 // ====== IJTIMA INTERVAL GLOBAL ======
 let ijtimaInterval = null;
@@ -178,6 +182,7 @@ function getIjtimaFix(lat, lon){
   }
 
   ijtimaCache = t;
+  localStorage.setItem("ijtima", t.toISOString());
   return t;
 }
 
