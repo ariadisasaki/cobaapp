@@ -409,27 +409,40 @@ function updateIjtima(lat, lon){
     return;
   }
 
-  const diff = data.time - new Date();
+  const t = data.time;
 
-  const waktu = data.time.toLocaleString('id-ID', {
+  // 🔹 format tanggal
+  const tanggal = t.toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
+    year: 'numeric'
+  });
+
+  // 🔹 format jam
+  const jam = t.toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
-  });
+  }).replace(/:/g, ".");
+
+  // 🔹 selisih waktu
+  const diff = t - new Date();
+
+  let statusText;
 
   if(diff < 0){
-    el.innerText = `🌑 Ijtima: ${waktu} (sudah terjadi)`;
+    statusText = "(sudah terjadi)";
   } else {
+    // ⏳ countdown
+    const sisaJam = Math.floor(diff / (1000*60*60));
+    const sisaMenit = Math.floor((diff % (1000*60*60)) / (1000*60));
 
-    // ⏳ hitung countdown
-    const jam = Math.floor(diff / (1000*60*60));
-    const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-
-    el.innerText = `🌑 Ijtima: ${waktu} (⏳ ${jam} jam ${menit} menit lagi)`;
+    statusText = `(⏳ ${sisaJam} jam ${sisaMenit} menit lagi)`;
   }
+
+  el.innerText = `🌑 Ijtima: ${tanggal}
+  Pkl. ${jam}
+  ${statusText}`;
 }
 
 // ================= JALUR BULAN =================
