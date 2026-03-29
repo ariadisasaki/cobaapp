@@ -409,10 +409,16 @@ function updateIjtima(lat, lon){
     return;
   }
 
-  // 🔥 TAMBAHKAN DI SINI
   const diff = data.time - new Date();
 
-  const waktu = data.time.toLocaleString('id-ID');
+  const waktu = data.time.toLocaleString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 
   if(diff < 0){
     el.innerText = `🌑 Ijtima: ${waktu} (sudah terjadi)`;
