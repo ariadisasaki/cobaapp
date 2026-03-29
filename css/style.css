@@ -12,9 +12,16 @@ body{
   text-align:center;
   padding:10px 0;
 }
+
+/* ===================== CONTAINER (FIX UTAMA) ===================== */
 .container{
   padding:10px;
-  padding-left:clamp(55px, 12vw, 70px);
+  transition: padding-left 0.3s ease;
+}
+
+/* Saat sidebar terbuka → jarak kiri = kanan */
+.sidebar.active ~ .container{
+  padding-left:calc(250px + 10px); /* sidebar + gap */
 }
 
 /* ===================== CARD ===================== */
@@ -28,6 +35,7 @@ body{
   position:relative;
   animation: fadeIn 0.5s ease;
 }
+
 @keyframes fadeIn{
   from{opacity:0; transform:translateY(10px);}
   to{opacity:1; transform:translateY(0);}
@@ -40,16 +48,18 @@ body{
   gap:8px;
   margin-top:10px;
 }
+
 .data-box{
   background: rgba(255,255,255,0.05);
   padding:8px;
   border-radius:12px;
   text-align:center;
 }
+
 .full-width{
   grid-column: span 2;
-  text-align:center;
 }
+
 .highlight{
   font-size:16px;
   font-weight:600;
@@ -64,32 +74,32 @@ body{
   border-radius:12px;
   margin-top:5px;
 }
+
 .status.ok{ background:#1f8f4e; }
 .status.no{ background:#8f1f1f; }
 
-/* ===================== CAMERA WRAPPER (SQUARE) ===================== */
+/* ===================== CAMERA ===================== */
 .camera-wrapper{
   position: relative;
   overflow: hidden;
   border-radius:15px;
   width:100%;
-  max-width:400px;      /* optional untuk ukuran square */
-  aspect-ratio: 1/1;    /* PAKSA persegi */
-  margin:20px auto;     /* tengah horizontal */
+  max-width:400px;
+  aspect-ratio: 1/1;
+  margin:20px auto;
   background:#000;
 }
 
-/* VIDEO / CAMERA */
 video{
   width:100%;
   height:100%;
-  object-fit:cover;      /* isi penuh persegi */
+  object-fit:cover;
   border-radius:15px;
   display:block;
   z-index:1;
 }
 
-/* ===================== MARKER AR ===================== */
+/* ===================== MARKER ===================== */
 #marker{
   position:absolute;
   font-size:30px;
@@ -97,11 +107,8 @@ video{
   pointer-events:none;
   left:50%;
   top:50%;
-  transform: translate(-50%, -50%); /* titik pusat marker = koordinat JS */
-  background: transparent !important;
-  border: none !important;
+  transform: translate(-50%, -50%);
   filter: drop-shadow(0 0 6px currentColor);
-  transition: color 0.2s ease, transform 0.1s ease;
 }
 
 /* ===================== CROSSHAIR ===================== */
@@ -115,10 +122,9 @@ video{
   border:2px solid #00c6ff;
   border-radius:50%;
   z-index:3;
-  pointer-events:none;
 }
 
-/* ===================== GRID RADAR ===================== */
+/* ===================== GRID ===================== */
 .grid{
   position:absolute;
   width:100%;
@@ -132,7 +138,7 @@ video{
   z-index:2;
 }
 
-/* ===================== AR STATUS ===================== */
+/* ===================== AR ===================== */
 .ar-status{
   position:absolute;
   bottom:10px;
@@ -144,34 +150,19 @@ video{
   font-size:13px;
   z-index:5;
 }
+
 .ar-overlay{
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #fff;
-  background: rgba(0,0,0,0.3);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 14px;
-  pointer-events: none;
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.3);
+  padding:4px 8px;
+  border-radius:4px;
+  font-weight:600;
+  font-size:14px;
 }
 
 /* ===================== BUTTON ===================== */
-#calibrateBtn{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(135deg,#ff7b00,#ffd700);
-  color:#fff;
-  font-weight:600;
-  margin-top:8px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
-  transition:0.2s;
-}
-#calibrateBtn:active{ transform:scale(0.97); }
-
 button{
   width:100%;
   padding:12px;
@@ -182,47 +173,11 @@ button{
   font-weight:600;
   margin-top:8px;
   box-shadow:0 5px 15px rgba(0,0,0,0.3);
-  transition:0.2s;
 }
-button:active{ transform:scale(0.97); }
-button:hover{ filter:brightness(1.1); }
 
-/* ===================== SPLASH ===================== */
-#splash{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#020611;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  transition:0.5s;
+#calibrateBtn{
+  background:linear-gradient(135deg,#ff7b00,#ffd700);
 }
-.splash-content{text-align:center;}
-.logo{
-  width:180px;
-  max-width:40%;
-  margin-bottom:10px;
-  animation:zoomIn 0.8s ease;
-  filter: drop-shadow(0 0 10px rgba(0,198,255,0.6));
-}
-@keyframes zoomIn{
-  from{ transform:scale(0.7); opacity:0; }
-  to{ transform:scale(1); opacity:1; }
-}
-.loader{
-  width:40px;
-  height:40px;
-  border:4px solid rgba(255,255,255,0.2);
-  border-top:4px solid #3a7bfd;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-  margin:10px auto;
-}
-@keyframes spin{ to{transform:rotate(360deg);} }
 
 /* ===================== FOOTER ===================== */
 .footer{
@@ -231,72 +186,55 @@ button:hover{ filter:brightness(1.1); }
   margin-top:15px;
   opacity:0.7;
 }
+
 .footer a{
   color:#00c6ff;
   text-decoration:none;
   font-weight:600;
 }
 
-/* ===================== HILAL PATH DOTS ===================== */
+/* ===================== HILAL PATH ===================== */
 .hilal-path-dot{
   position:absolute;
   width:6px;
   height:6px;
   border-radius:50%;
   background:rgba(0,198,255,0.7);
-  pointer-events:none;
-  z-index:3;
 }
 
-/* ===================== SIDEBAR MENU (MATCH UI KAMU) ===================== */
-
-/* Tombol ☰ */
+/* ===================== SIDEBAR ===================== */
 .menu-btn{
   position: fixed;
   top: 15px;
   left: 15px;
   font-size: 22px;
-  background: rgba(255,255,255,0.08); /* sama seperti card */
+  background: rgba(255,255,255,0.08);
   color: #fff;
   padding: 8px 12px;
   border-radius: 12px;
   z-index: 2000;
   cursor: pointer;
   backdrop-filter: blur(6px);
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
 }
 
-/* Sidebar */
 .sidebar{
   position: fixed;
   top: 0;
   left: -270px;
   width: 250px;
   height: 100%;
-  background: rgba(255,255,255,0.08); /* sama seperti card */
+  background: rgba(255,255,255,0.08);
   backdrop-filter: blur(10px);
-  color: white;
   padding: 20px;
   transition: 0.3s ease;
   z-index: 2001;
-  box-shadow: 5px 0 20px rgba(0,0,0,0.4);
-  border-right: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Sidebar aktif */
 .sidebar.active{
   left: 0;
 }
 
-/* Judul sidebar */
-.sidebar h3{
-  margin-top:0;
-  margin-bottom:15px;
-  font-weight:600;
-  text-align:center;
-}
-
-/* Overlay */
+/* ===================== OVERLAY ===================== */
 .overlay{
   position: fixed;
   top:0;
@@ -315,28 +253,7 @@ button:hover{ filter:brightness(1.1); }
   visibility:visible;
 }
 
-/* Tombol di sidebar (ikuti style global kamu) */
-.sidebar button{
-  width:100%;
-  margin:10px 0;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(135deg,#3a7bfd,#00c6ff);
-  color:#fff;
-  font-weight:600;
-  box-shadow:0 5px 15px rgba(0,0,0,0.3);
-  transition:0.2s;
-}
-
-.sidebar button:active{
-  transform:scale(0.97);
-}
-
-.sidebar button:hover{
-  filter:brightness(1.1);
-}
-
+/* ===================== HIDE BUTTON DARI CARD ===================== */
 #startARBtn,
 #calibrateBtn{
   display:none;
