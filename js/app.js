@@ -55,6 +55,9 @@ window.onload = () => {
       });
     }
   }, { once:true });
+
+  // ====== UPDATE IJTIMA REALTIME ======
+  updateIjtimaRealtime(defaultLat, defaultLon);
 };
 
 // ================= GET LOCATION =================
@@ -130,11 +133,6 @@ function updateIjtimaRealtime(lat, lon){
   if(ijtimaInterval) clearInterval(ijtimaInterval);
 
   // 🔥 hitung SEKALI (biar tidak berat)
-  if(lat == null || lon == null){
-    console.warn("Koordinat belum tersedia");
-    return;
-  }
-  
   const t = getIjtimaFix(lat, lon);
   const next = getIjtimaBerikutnya(lat, lon);
 
@@ -173,24 +171,6 @@ function updateIjtimaRealtime(lat, lon){
   }, 1000);
 }
 
-// ==== CARI PERKIRAAN IJTIMA ===
-function cariPerkiraanIjtima(lat, lon, now){
-  let minDiff = 999;
-  let bestTime = null;
-
-  for(let i = -48; i <= 48; i++){ // ±2 hari tiap 1 jam
-    let t = new Date(now.getTime() + i * 3600 * 1000);
-    let diff = Math.abs(selisihRA(lat, lon, t));
-
-    if(diff < minDiff){
-      minDiff = diff;
-      bestTime = t;
-    }
-  }
-
-  return bestTime;
-}
-
 // ==== DAPATKAN IJTIMA FIX ====
 function getIjtimaFix(lat, lon){
   if(ijtimaCache) return ijtimaCache;
@@ -207,55 +187,23 @@ function getIjtimaFix(lat, lon){
 }
 
 // ==== CARI IJTIMA PRESISI ====
-function cariIjtimaPresisi(lat, lon, now){
-
-  // ================= STEP 1: CARI PERKIRAAN DULU =================
-  let minDiff = 999;
-  let center = null;
-
-  for(let i = -48; i <= 48; i++){ // ±2 hari (step 1 jam)
-    let t = new Date(now.getTime() + i * 3600 * 1000);
-    let diff = Math.abs(selisihRA(lat, lon, t));
-
-    if(diff < minDiff){
-      minDiff = diff;
-      center = t;
-    }
-  }
-
-  // 🔥 JAGA-JAGA kalau center null
-  if(!center){
-    console.warn("Center tidak ditemukan");
-    return now;
-  }
-
-  // ================= STEP 2: BIKIN RANGE SEMPIT =================
-  let t1 = new Date(center.getTime() - 6 * 3600 * 1000);
-  let t2 = new Date(center.getTime() + 6 * 3600 * 1000);
-
+function cariIjtimaPresisi(lat, lon){
+  let t1 = new Date(nowGlobal.getTime() - 2 * 24 * 3600 * 1000);
+  let t2 = new Date(nowGlobal.getTime() + 2 * 24 * 3600 * 1000);
+  
   let f1 = selisihRA(lat, lon, t1);
   let f2 = selisihRA(lat, lon, t2);
 
-  // 🔥 VALIDASI ROOT
-  if(isNaN(f1) || isNaN(f2)){
-    console.warn("Nilai RA invalid");
-    return center;
-  }
-
+  // 🔥 VALIDASI WAJIB
   if(f1 * f2 > 0){
-    console.warn("Root tidak ketemu, pakai pendekatan kasar");
-    return center; // fallback aman
+    console.warn("Root tidak ditemukan dalam range ini!");
+    return cariIjtimaTerdekat(lat, lon); // fallback
   }
 
-  // ================= STEP 3: BISECTION =================
+  // 🔁 BISECTION
   for(let i = 0; i < 30; i++){
     let tMid = new Date((t1.getTime() + t2.getTime()) / 2);
     let fMid = selisihRA(lat, lon, tMid);
-
-    if(isNaN(fMid)){
-      console.warn("fMid NaN, skip");
-      return center;
-    }
 
     if(f1 * fMid < 0){
       t2 = tMid;
@@ -266,7 +214,6 @@ function cariIjtimaPresisi(lat, lon, now){
     }
   }
 
-  // ================= HASIL FINAL =================
   return new Date((t1.getTime() + t2.getTime()) / 2);
 }
 
@@ -313,13 +260,9 @@ function getIjtimaBerikutnya(lat, lon){
 function selisihRA(lat, lon, time){
   const data = hitungHilalCore(lat, lon, time);
 
-  if(data.sunRA === undefined || data.moonRA === undefined){
-    console.error("RA TIDAK ADA!", data);
-    return NaN;
-  }
-
   let diff = data.sunRA - data.moonRA;
 
+  // 🔥 NORMALISASI KE -180 s/d +180
   if(diff > 180) diff -= 360;
   if(diff < -180) diff += 360;
 
@@ -616,12 +559,7 @@ function hitungHilalCore(lat, lon, customTime=null){
           + 0.000289*Math.sin(3*M*rad);
 
   const sunLong = L + C + deltaPsi;
-  let sunRA = Math.atan2(
-    Math.cos(epsilon*rad)*Math.sin(sunLong*rad), 
-    Math.cos(sunLong*rad)
-  )*deg;
-  
-  if(sunRA < 0) sunRA += 360;
+  const sunRA = Math.atan2(Math.cos(epsilon*rad)*Math.sin(sunLong*rad), Math.cos(sunLong*rad))*deg;
   const sunDec = Math.asin(Math.sin(epsilon*rad)*Math.sin(sunLong*rad))*deg;
 
   // ================= BULAN =================
@@ -651,12 +589,10 @@ function hitungHilalCore(lat, lon, customTime=null){
   lonMoon += deltaPsi;
 
   // ================= RA DEC BULAN =================
-  let moonRA = Math.atan2(
+  const moonRA = Math.atan2(
     Math.sin(lonMoon*rad)*Math.cos(epsilon*rad) - Math.tan(latMoon*rad)*Math.sin(epsilon*rad),
     Math.cos(lonMoon*rad)
   )*deg;
-  
-  if(moonRA < 0) moonRA += 360;
 
   const moonDec = Math.asin(
     Math.sin(latMoon*rad)*Math.cos(epsilon*rad)
@@ -697,15 +633,7 @@ function hitungHilalCore(lat, lon, customTime=null){
   const illumination = (1 - Math.cos(elo * rad)) / 2 * 100;
 
   // ================= OUTPUT BERSIH =================
-  return { 
-    alt, 
-    azi, 
-    elo, 
-    age, 
-    illumination, 
-    sunRA, 
-    moonRA
-  };
+  return { alt, azi, elo, age, illumination };
 }
 
 // ================= HITUNG MATAHARI =================
@@ -752,7 +680,15 @@ function hitungMatahari(lat, lon){
 
   if(azi < 0) azi += 360;
 
-  return { alt, azi };
+  return {
+    alt, 
+    azi, 
+    elo, 
+    age, 
+    illumination, 
+    sunRA, 
+    moonRA
+  };
 }
 
 // ================= KALIBRASI MATAHARI =================
