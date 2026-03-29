@@ -21,6 +21,16 @@ let declinationGlobal = 0;
 window.onload = () => {
   startClock();
   getLocation();
+
+  // ==== update ijtima realtime ====
+  // pastikan currentLat & currentLon sudah ada
+  const updateIjtimaInterval = setInterval(()=>{
+    if(typeof currentLat !== "undefined" && typeof currentLon !== "undefined"){
+      updateIjtima(currentLat, currentLon);
+    }
+  }, 1000); // update tiap 1 detik
+  // ================================
+
   initSensor();
 
   // Tombol Kalibrasi Kompas
@@ -104,10 +114,6 @@ function getLocation(){
     setInterval(()=>{
       updateHijriRealTime(currentLat, currentLon);
     }, 60000);
-    
-    setInterval(()=>{
-      updateIjtima(currentLat, currentLon);
-    }, 10 * 60 * 1000);
 
     // ================== 🔹 BACKGROUND TASK ==================
     getMagneticDeclination(lat, lon); // 🌐 jalan belakangan (tidak blocking)
