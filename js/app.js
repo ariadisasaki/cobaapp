@@ -133,6 +133,11 @@ function updateIjtimaRealtime(lat, lon){
   if(ijtimaInterval) clearInterval(ijtimaInterval);
 
   // 🔥 hitung SEKALI (biar tidak berat)
+  if(lat == null || lon == null){
+    console.warn("Koordinat belum tersedia");
+    return;
+  }
+  
   const t = getIjtimaFix(lat, lon);
   const next = getIjtimaBerikutnya(lat, lon);
 
