@@ -139,16 +139,20 @@ function updateIjtimaRealtime(lat, lon){
     // 🔹 sejak ijtima
     let diff = now - t;
 
-    const jam = Math.floor(diff / (1000*60*60));
-    const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-    const detik = Math.floor((diff % (1000*60)) / 1000);
-
+    const totalDetik = Math.floor((now - t) / 1000);
+    
+    const jam = Math.floor(totalDetik / 3600);
+    const menit = Math.floor((totalDetik % 3600) / 60);
+    const detik = totalDetik % 60;
+    
     // 🔹 menuju ijtima berikutnya
     let diffNext = next - now;
 
-    const jamNext = Math.floor(diffNext / (1000*60*60));
-    const menitNext = Math.floor((diffNext % (1000*60*60)) / (1000*60));
-    const detikNext = Math.floor((diffNext % (1000*60)) / 1000);
+    const totalDetikNext = Math.floor((next - now) / 1000);
+    
+    const jamNext = Math.floor(totalDetikNext / 3600);
+    const menitNext = Math.floor((totalDetikNext % 3600) / 60);
+    const detikNext = totalDetikNext % 60;
 
     // 🔹 format tanggal
     const tanggal = t.toLocaleString('id-ID', {
