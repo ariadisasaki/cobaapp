@@ -122,48 +122,51 @@ function getLocation(){
   });
 }
 
+// ====== SIMPAN IJTIMA ======
+function setIjtimaTerakhir(time){
+  localStorage.setItem("ijtimaTerakhir", new Date(time).toISOString());
+}
+
+// ====== AMBIL IJTIMA ======
+function getIjtimaTerakhir(){
+  const stored = localStorage.getItem("ijtimaTerakhir");
+  if(stored) return new Date(stored);
+  return null; // jika belum ada, bisa hitung otomatis
+}
+
 // ================= UPDATE IJTIMA REALTIME =================
-function updateIjtimaRealtime(lat, lon){
-  const el = document.getElementById("ijtima");
-  if(!el) return;
-
-  // clear interval lama agar tidak menumpuk
-  if(ijtimaInterval) clearInterval(ijtimaInterval);
-
-  const data = cariIjtima(lat, lon);
-  if(!data.time){
-    el.innerText = "Ijtima tidak ditemukan";
+function updateIjtimaRealtime(){
+  const ijtimaTerakhir = getIjtimaTerakhir();
+  if(!ijtimaTerakhir){
+    document.getElementById("hitungIjtima").innerText = "Ijtima belum tersedia";
     return;
   }
 
-  const t = data.time;
+  const now = new Date();
+  let diffMs = now - ijtimaTerakhir; // selisih ms
+  let statusText = "";
 
-  ijtimaInterval = setInterval(()=>{
-    const now = new Date();
-    let diff = t - now; // selisih ms
-    let statusText = "";
+  if(diffMs < 0){
+    // Hitung mundur sebelum ijtima
+    diffMs = Math.abs(diffMs);
+    const jam = Math.floor(diffMs / (1000*60*60));
+    const menit = Math.floor((diffMs % (1000*60*60)) / (1000*60));
+    const detik = Math.floor((diffMs % (1000*60)) / 1000);
+    statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
+  } else {
+    // Hitung maju setelah ijtima
+    const jam = Math.floor(diffMs / (1000*60*60));
+    const menit = Math.floor((diffMs % (1000*60*60)) / (1000*60));
+    const detik = Math.floor((diffMs % (1000*60)) / 1000);
+    statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
+  }
 
-    if(diff > 0){
-      const jam = Math.floor(diff / (1000*60*60));
-      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const detik = Math.floor((diff % (1000*60)) / 1000);
-      statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
-    } else {
-      diff = -diff;
-      const jam = Math.floor(diff / (1000*60*60));
-      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const detik = Math.floor((diff % (1000*60)) / 1000);
-      statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
-    }
+  // Tampilkan tanggal ijtima + status
+  const el = document.getElementById("ijtima");
+  if(el) el.innerText = `🌑 Ijtima: ${ijtimaTerakhir.toLocaleDateString('id-ID')}\n${statusText}`;
 
-    const tanggal = t.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    el.innerText = `🌑 Ijtima: ${tanggal}\n${statusText}`;
-  }, 1000);
+  // Update tiap detik
+  setTimeout(updateIjtimaRealtime, 1000);
 }
 
 // =============== CARI IJTIMA ===============
