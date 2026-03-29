@@ -15,13 +15,13 @@ body{
 
 /* ===================== CONTAINER (FIX UTAMA) ===================== */
 .container{
-  padding:10px;
+  padding:10px 16px; /* kanan = 16px */
   transition: padding-left 0.3s ease;
 }
 
 /* Saat sidebar terbuka → jarak kiri = kanan */
 .sidebar.active ~ .container{
-  padding-left:calc(250px + 10px); /* sidebar + gap */
+  padding-left:calc(250px + 16px); /* 🔥 samakan dengan kanan */
 }
 
 /* ===================== CARD ===================== */
