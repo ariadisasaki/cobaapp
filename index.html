@@ -104,14 +104,26 @@
       }
       document.getElementById("arStatus").innerText = "AR & Audio siap digunakan";
     });
-
-    window.addEventListener("load", ()=>{
-      setTimeout(()=>{
-        document.getElementById("splash").style.opacity="0";
-        setTimeout(()=>{
-          document.getElementById("splash").style.display="none";
-        },500);
-      },2000);
+    
+    window.addEventListener("load", () => {
+      const splash = document.getElementById("splash");
+      
+      // 🔒 cegah error kalau elemen tidak ditemukan
+      if (!splash) return;
+      
+      // ⏳ durasi tampil splash
+      setTimeout(() => {
+        
+        // 🎬 animasi fade out
+        splash.style.opacity = "0";
+        splash.style.visibility = "hidden";
+        
+        // 🧹 hapus dari tampilan setelah animasi selesai
+        setTimeout(() => {
+          splash.style.display = "none";
+        }, 500);
+      
+      }, 1800); // bisa ubah (1500 - 2500)
     });
 
     if("serviceWorker" in navigator){
