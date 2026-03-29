@@ -276,18 +276,18 @@ function getHijri(lat, lon){
       console.log("💾 Simpan keputusan hijri:", tambahHari);
     }
   }
-
-  // ================== JULIAN DAY (FIX HARI + ZONA WAKTU AMAN) ==================
-const localMidnight = new Date(
-  now.getFullYear(),
-  now.getMonth(),
-  now.getDate(),
-  0, 0, 0, 0
-);
-
-const utcMidnight = localMidnight.getTime() - (localMidnight.getTimezoneOffset() * 60000);
-
-let jd = Math.floor((utcMidnight / 86400000) + 2440587.5) + tambahHari;
+    
+    // ================== JULIAN DAY (FIX HARI + ZONA WAKTU AMAN) ==================
+    const localMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0, 0, 0, 0
+    );
+    
+    const utcMidnight = localMidnight.getTime() - (localMidnight.getTimezoneOffset() * 60000);
+    
+    let jd = Math.floor((utcMidnight / 86400000) + 2440587.5) + tambahHari;
 
   // ================== KONVERSI HIJRI ==================
   let l = jd - 1948440 + 10632;
@@ -362,7 +362,19 @@ function getLocation(){
         startCam();
         autoReloadAtMaghrib(lat, lon);
 
-        setInterval(()=> hitungHilal(lat, lon), 10*60*1000);
+        // Update hilal tiap 10 detik
+        setInterval(()=>{
+            if(currentLat && currentLon){
+                hitungHilal(currentLat, currentLon);
+            }
+        }, 10 * 1000);
+        
+        // Update hijri tiap 1 menit
+        setInterval(()=>{
+            if(currentLat && currentLon){
+                updateHijriRealTime(currentLat, currentLon);
+            }
+        }, 60 * 1000);
     },{enableHighAccuracy:true});
 }
 
