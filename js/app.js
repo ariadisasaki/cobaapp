@@ -697,7 +697,15 @@ function hitungHilalCore(lat, lon, customTime=null){
   const illumination = (1 - Math.cos(elo * rad)) / 2 * 100;
 
   // ================= OUTPUT BERSIH =================
-  return { alt, azi, elo, age, illumination };
+  return { 
+    alt, 
+    azi, 
+    elo, 
+    age, 
+    illumination, 
+    sunRA, 
+    moonRA
+  };
 }
 
 // ================= HITUNG MATAHARI =================
