@@ -179,20 +179,6 @@ button{
   background:linear-gradient(135deg,#ff7b00,#ffd700);
 }
 
-/* ===================== FOOTER ===================== */
-.footer{
-  text-align:center;
-  font-size:14px;
-  margin-top:15px;
-  opacity:0.7;
-}
-
-.footer a{
-  color:#00c6ff;
-  text-decoration:none;
-  font-weight:600;
-}
-
 /* ===================== HILAL PATH ===================== */
 .hilal-path-dot{
   position:absolute;
@@ -233,6 +219,17 @@ button{
 
 .sidebar.active{
   transform: translateX(0);
+}
+
+/* ===================== SIDEBAR LAYOUT ===================== */
+.sidebar{
+  display:flex;
+  flex-direction:column;
+}
+
+/* dorong konten ke bawah */
+.sidebar-bottom{
+  margin-top:auto;
 }
 
 /* ===================== OVERLAY ===================== */
