@@ -49,12 +49,6 @@ window.onload = () => {
       });
     }
   }, { once:true });
-
-  // ====== UPDATE IJTIMA REALTIME ======
-  // Default dulu, nanti akan diupdate oleh getLocation()
-  const defaultLat = -8.5833;
-  const defaultLon = 116.1167;
-  updateIjtimaRealtime(defaultLat, defaultLon);
 };
 
 // ================= GET LOCATION =================
@@ -82,6 +76,7 @@ function getLocation(){
         document.getElementById('lokasi').innerText = lokasi;
       })
       .catch(()=> document.getElementById('lokasi').innerText = "Lokasi tidak tersedia");
+    updateIjtimaRealtime(lat, lon); // panggil setelah koordinat valid
 
     // ====== UPDATE HIJRI & HILAL ======
     updateHijriRealTime(lat, lon);
