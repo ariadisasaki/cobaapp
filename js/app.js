@@ -51,9 +51,6 @@ window.onload = () => {
   }, { once:true });
 
   // ====== UPDATE IJTIMA REALTIME ======
-  // Default dulu, nanti akan diupdate oleh getLocation()
-  const defaultLat = -8.5833;
-  const defaultLon = 116.1167;
   updateIjtimaRealtime(defaultLat, defaultLon);
 };
 
@@ -137,8 +134,6 @@ function updateIjtimaRealtime(lat, lon){
     const now = new Date();
 
     // 🔹 sejak ijtima
-    let diff = now - t;
-
     const totalDetik = Math.floor((now - t) / 1000);
     
     const jam = Math.floor(totalDetik / 3600);
@@ -146,8 +141,6 @@ function updateIjtimaRealtime(lat, lon){
     const detik = totalDetik % 60;
     
     // 🔹 menuju ijtima berikutnya
-    let diffNext = next - now;
-
     const totalDetikNext = Math.floor((next - now) / 1000);
     
     const jamNext = Math.floor(totalDetikNext / 3600);
