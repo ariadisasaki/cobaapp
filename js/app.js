@@ -652,18 +652,23 @@ function autoReloadAtMaghrib(lat, lon){
 
 // ================= SENSOR =================
 function initSensor(){
-  let lastAlpha=0, lastGamma=0;
-  window.addEventListener("deviceorientation", e=>{
-    let alpha=e.alpha||0;
-    let gamma=e.gamma||0;
+  let lastAlpha=0, lastBeta=0, lastGamma=0;
 
-    alpha=lastAlpha+(alpha-lastAlpha)*0.08;
-    gamma=lastGamma+(gamma-lastGamma)*0.08;
+  window.addEventListener("deviceorientationabsolute", e=>{
+    let alpha = e.alpha || 0;
+    let beta  = e.beta  || 0;
+    let gamma = e.gamma || 0;
 
-    lastAlpha=alpha;
-    lastGamma=gamma;
+    // 🔹 FILTER biar halus
+    alpha = lastAlpha + (alpha - lastAlpha) * 0.05;
+    beta  = lastBeta  + (beta  - lastBeta)  * 0.05;
+    gamma = lastGamma + (gamma - lastGamma) * 0.05;
 
-    updateAR(alpha,0,gamma);
+    lastAlpha = alpha;
+    lastBeta  = beta;
+    lastGamma = gamma;
+
+    updateAR(alpha, beta, gamma);
   });
 }
 
@@ -683,33 +688,52 @@ function updateAR(alpha, beta, gamma){
         smoothY = height/2;
     }
 
-    const localOffset = headingOffset || 0; // kalibrasi perangkat
-    const heading = (360 - alpha + localOffset + declinationGlobal) % 360;
+    // ================= HEADING (FIX) =================
+    let heading;
+    if(alpha !== null){
+        heading = alpha;
+    } else {
+        heading = 360 - alpha;
+    }
+
+    heading = (heading + headingOffset + declinationGlobal) % 360;
+
     const pitch = beta || 0;
     const roll  = gamma || 0;
 
-    let deltaAz  = hilalData.azi - heading;
-    let deltaAlt = hilalData.alt - pitch;
+    // ================= AZIMUTH (FIX BESAR) =================
+    let deltaAz = ((hilalData.azi - heading + 540) % 360) - 180;
 
-    if(deltaAz > 180) deltaAz -= 360;
-    if(deltaAz < -180) deltaAz += 360;
+    // ================= ALTITUDE (FIX) =================
+    let deviceAlt = pitch * Math.cos(roll * Math.PI/180);
+    let deltaAlt = hilalData.alt - deviceAlt;
 
-    deltaAz  = Math.max(-45, Math.min(45, deltaAz));
-    deltaAlt = Math.max(-30, Math.min(30, deltaAlt));
+    // 🔹 koreksi horizon kamera
+    deltaAlt -= 1.5;
 
-    let targetX = width/2 + deltaAz * 1.8 + roll*0.5;
-    let targetY = height/2 - deltaAlt * 1.4 - pitch*0.3;
+    // ================= BATAS =================
+    deltaAz  = Math.max(-60, Math.min(60, deltaAz));
+    deltaAlt = Math.max(-45, Math.min(45, deltaAlt));
+
+    // ================= PROYEKSI REALISTIS =================
+    const fov = 60;
+
+    let targetX = width/2 + (deltaAz / fov) * width + roll*0.3;
+    let targetY = height/2 - (deltaAlt / fov) * height - pitch*0.2;
 
     targetX = Math.max(30, Math.min(width-30, targetX));
     targetY = Math.max(40, Math.min(height-40, targetY));
 
+    // ================= SMOOTHING (TETAP DIPAKAI) =================
     smoothX += (targetX - smoothX) * 0.12;
     smoothY += (targetY - smoothY) * 0.1;
 
     marker.style.left = smoothX + "px";
     marker.style.top  = smoothY + "px";
 
+    // ================= ERROR & FEEDBACK =================
     const error = Math.sqrt(deltaAz*deltaAz + deltaAlt*deltaAlt);
+
     if(error < 5){
         marker.style.color = "lime";
         if(!beepCooldown){
@@ -724,21 +748,26 @@ function updateAR(alpha, beta, gamma){
         marker.style.color = "red";
     }
 
+    // ================= INFO UI =================
     if(azEl) azEl.innerText = `Azimuth: ${hilalData.azi.toFixed(2)}°`;
     if(altEl) altEl.innerText = `Tinggi: ${hilalData.alt.toFixed(2)}°`;
 
+    // ================= PATH HILAL (FIX JUGA) =================
     if(Date.now() - lastPathUpdate > 2000){
         lastPathUpdate = Date.now();
         const path = generateHilalPath(currentLat, currentLon);
+
         path.forEach(p=>{
             const dot = document.createElement("div");
             dot.className = "hilal-path-dot";
 
-            const dx = (p.azi - heading) * 2;
-            const dy = (p.alt - pitch) * -2;
+            let dx = ((p.azi - heading + 540) % 360) - 180;
+            let dy = p.alt - deviceAlt;
 
-            dot.style.left = (width/2 + dx) + "px";
-            dot.style.top  = (height/2 + dy) + "px";
+            const fov = 60;
+
+            dot.style.left = (width/2 + (dx/fov)*width) + "px";
+            dot.style.top  = (height/2 - (dy/fov)*height) + "px";
 
             wrapper.appendChild(dot);
             setTimeout(()=>dot.remove(),1500);
@@ -756,7 +785,7 @@ function calibrateCompass(){
 
     if(samples.length > 20){
       let avg = samples.reduce((a,b)=>a+b)/samples.length;
-      headingOffset = 360 - avg;
+      headingOffset = (360 - avg) % 360;
       calibrating = false;
       window.removeEventListener("deviceorientation", handler);
 
