@@ -21,16 +21,6 @@ let declinationGlobal = 0;
 window.onload = () => {
   startClock();
   getLocation();
-
-  // ==== update ijtima realtime ====
-  // pastikan currentLat & currentLon sudah ada
-  const updateIjtimaInterval = setInterval(()=>{
-    if(typeof currentLat !== "undefined" && typeof currentLon !== "undefined"){
-      updateIjtima(currentLat, currentLon);
-    }
-  }, 1000); // update tiap 1 detik
-  // ================================
-
   initSensor();
 
   // Tombol Kalibrasi Kompas
@@ -102,7 +92,7 @@ function getLocation(){
     // ================== 🔥 INIT CEPAT (TANPA NUNGGU API) ==================
     updateHijriRealTime(lat, lon);
     hitungHilal(lat, lon);
-    updateIjtima(lat, lon);
+    updateIjtimaRealTime(lat, lon);
     startCam();
     autoReloadAtMaghrib(lat, lon);
 
@@ -151,7 +141,6 @@ function getLocation(){
     timeout:15000,
     maximumAge:0
   });
-}
 
 // ================= SENSOR =================
 function initSensor(){
@@ -403,58 +392,49 @@ function cariIjtima(lat, lon){
   };
 }
 
-// ================= UPDATE IJTIMA =================
-function updateIjtima(lat, lon){
+// ================= UPDATE IJTIMA REAL =================
+function updateIjtimaRealtime(lat, lon){
   const el = document.getElementById("ijtima");
   if(!el) return;
 
   const data = cariIjtima(lat, lon);
-
   if(!data.time){
     el.innerText = "Ijtima tidak ditemukan";
     return;
   }
 
   const t = data.time;
-  const now = new Date();
-  const diff = t - now;
 
-  // 🔹 format tanggal & jam
-  const tanggal = t.toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
-  const jam = t.toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }).replace(/:/g, ".");
+  // update tiap detik
+  setInterval(()=>{
+    const now = new Date();
+    let diff = t - now; // selisih dalam ms
+    let statusText = "";
+    
+    if(diff > 0){
+      // ⏳ HITUNG MUNDUR
+      const jam = Math.floor(diff / (1000*60*60));
+      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const detik = Math.floor((diff % (1000*60)) / 1000);
+      statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
+    } else {
+      // ⏱ HITUNG MAJU
+      diff = -diff;
+      const jam = Math.floor(diff / (1000*60*60));
+      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const detik = Math.floor((diff % (1000*60)) / 1000);
+      statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
+    }
 
-  let statusText;
-  let countdownText = "";
+    // tampilkan tanggal ijtima + status
+    const tanggal = t.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
 
-  if(diff > 0){
-    // ⏳ HITUNG MUNDUR
-    const sisaJam = Math.floor(diff / (1000*60*60));
-    const sisaMenit = Math.floor((diff % (1000*60*60)) / (1000*60));
-    const sisaDetik = Math.floor((diff % (1000*60)) / 1000);
-
-    statusText = "HITUNG MUNDUR ⏳";
-    countdownText = `${sisaJam} jam ${sisaMenit} menit ${sisaDetik} detik lagi`;
-  } else {
-    // ⏱ HITUNG MAJU
-    const sdhJam = Math.floor(-diff / (1000*60*60));
-    const sdhMenit = Math.floor((-diff % (1000*60*60)) / (1000*60));
-    const sdhDetik = Math.floor((-diff % (1000*60)) / 1000);
-
-    statusText = "HITUNG MAJU ⏱";
-    countdownText = `${sdhJam} jam ${sdhMenit} menit ${sdhDetik} detik sudah lewat`;
-  }
-
-  el.innerText = `🌑 Ijtima: ${tanggal}
-  ${jam}
-  ${statusText}: ${countdownText}`;
+    el.innerText = `🌑 Ijtima: ${tanggal}\n${statusText}`;
+  }, 1000);
 }
 
 // ================= JALUR BULAN =================
