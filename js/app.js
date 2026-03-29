@@ -143,38 +143,6 @@ function getIjtimaTerakhir(lat, lon){
   return null;
 }
 
-function updateIjtimaRealtime(lat, lon){
-  const ijtimaTerakhir = getIjtimaTerakhir(lat, lon);
-  const el = document.getElementById("ijtima");
-
-  if(!ijtimaTerakhir){
-    if(el) el.innerText = "🌑 Ijtima memuat…";
-    return;
-  }
-
-  const now = new Date();
-  let diffMs = now - ijtimaTerakhir; 
-  let statusText = "";
-
-  if(diffMs < 0){
-    diffMs = Math.abs(diffMs);
-    const jam = Math.floor(diffMs / (1000*60*60));
-    const menit = Math.floor((diffMs % (1000*60*60)) / (1000*60));
-    const detik = Math.floor((diffMs % (1000*60)) / 1000);
-    statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
-  } else {
-    const jam = Math.floor(diffMs / (1000*60*60));
-    const menit = Math.floor((diffMs % (1000*60*60)) / (1000*60));
-    const detik = Math.floor((diffMs % (1000*60)) / 1000);
-    statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
-  }
-
-  if(el) el.innerText = `🌑 Ijtima: ${ijtimaTerakhir.toLocaleDateString('id-ID')}\n${statusText}`;
-
-  // Update tiap detik
-  setTimeout(()=> updateIjtimaRealtime(lat, lon), 1000);
-}
-
 // ================= UPDATE IJTIMA REALTIME =================
 function updateIjtimaRealtime(){
   const ijtimaTerakhir = getIjtimaTerakhir();
