@@ -313,8 +313,9 @@ function getIjtimaBerikutnya(lat, lon){
 function selisihRA(lat, lon, time){
   const data = hitungHilalCore(lat, lon, time);
 
-  if(!data.sunRA || !data.moonRA){
-    console.warn("RA ERROR:", data);
+  if(data.sunRA === undefined || data.moonRA === undefined){
+    console.error("RA TIDAK ADA!", data);
+    return NaN;
   }
 
   let diff = data.sunRA - data.moonRA;
@@ -615,7 +616,12 @@ function hitungHilalCore(lat, lon, customTime=null){
           + 0.000289*Math.sin(3*M*rad);
 
   const sunLong = L + C + deltaPsi;
-  const sunRA = Math.atan2(Math.cos(epsilon*rad)*Math.sin(sunLong*rad), Math.cos(sunLong*rad))*deg;
+  let sunRA = Math.atan2(
+    Math.cos(epsilon*rad)*Math.sin(sunLong*rad), 
+    Math.cos(sunLong*rad)
+  )*deg;
+  
+  if(sunRA < 0) sunRA += 360;
   const sunDec = Math.asin(Math.sin(epsilon*rad)*Math.sin(sunLong*rad))*deg;
 
   // ================= BULAN =================
@@ -645,10 +651,12 @@ function hitungHilalCore(lat, lon, customTime=null){
   lonMoon += deltaPsi;
 
   // ================= RA DEC BULAN =================
-  const moonRA = Math.atan2(
+  let moonRA = Math.atan2(
     Math.sin(lonMoon*rad)*Math.cos(epsilon*rad) - Math.tan(latMoon*rad)*Math.sin(epsilon*rad),
     Math.cos(lonMoon*rad)
   )*deg;
+  
+  if(moonRA < 0) moonRA += 360;
 
   const moonDec = Math.asin(
     Math.sin(latMoon*rad)*Math.cos(epsilon*rad)
@@ -736,15 +744,7 @@ function hitungMatahari(lat, lon){
 
   if(azi < 0) azi += 360;
 
-  return { 
-    alt, 
-    azi, 
-    elo, 
-    age, 
-    illumination, 
-    sunRA: sunRA_fix, 
-    moonRA: moonRA_fix
-  };
+  return { alt, azi };
 }
 
 // ================= KALIBRASI MATAHARI =================
