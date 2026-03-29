@@ -165,6 +165,37 @@ function updateIjtimaRealtime(lat, lon){
   }, 1000);
 }
 
+// ==== IJTIMA PRESISI ====
+function cariIjtimaPresisi(lat, lon){
+  let t1 = new Date(Date.now() - 2 * 24 * 3600 * 1000);
+  let t2 = new Date(Date.now() + 2 * 24 * 3600 * 1000);
+
+  let f1 = selisihRA(lat, lon, t1);
+  let f2 = selisihRA(lat, lon, t2);
+
+  // 🔥 VALIDASI WAJIB
+  if(f1 * f2 > 0){
+    console.warn("Root tidak ditemukan dalam range ini!");
+    return cariIjtimaTerdekat(lat, lon); // fallback
+  }
+
+  // 🔁 BISECTION
+  for(let i = 0; i < 30; i++){
+    let tMid = new Date((t1.getTime() + t2.getTime()) / 2);
+    let fMid = selisihRA(lat, lon, tMid);
+
+    if(f1 * fMid < 0){
+      t2 = tMid;
+      f2 = fMid;
+    } else {
+      t1 = tMid;
+      f1 = fMid;
+    }
+  }
+
+  return new Date((t1.getTime() + t2.getTime()) / 2);
+}
+
 // =============== CARI IJTIMA TERDEKAT ===============
 function cariIjtimaTerdekat(lat, lon){
   const now = new Date();
@@ -189,7 +220,7 @@ function cariIjtimaTerdekat(lat, lon){
 function getIjtimaTerakhir(lat, lon){
   const now = new Date();
 
-  let t = cariIjtimaTerdekat(lat, lon);
+  let t = cariIjtimaPresisi(lat, lon);
 
   if(t > now){
     t = new Date(t.getTime() - 29.530588 * 24 * 3600 * 1000);
