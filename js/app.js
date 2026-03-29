@@ -313,9 +313,12 @@ function getIjtimaBerikutnya(lat, lon){
 function selisihRA(lat, lon, time){
   const data = hitungHilalCore(lat, lon, time);
 
+  if(!data.sunRA || !data.moonRA){
+    console.warn("RA ERROR:", data);
+  }
+
   let diff = data.sunRA - data.moonRA;
 
-  // 🔥 NORMALISASI KE -180 s/d +180
   if(diff > 180) diff -= 360;
   if(diff < -180) diff += 360;
 
@@ -733,14 +736,14 @@ function hitungMatahari(lat, lon){
 
   if(azi < 0) azi += 360;
 
-  return {
+  return { 
     alt, 
     azi, 
     elo, 
     age, 
     illumination, 
-    sunRA, 
-    moonRA
+    sunRA: sunRA_fix, 
+    moonRA: moonRA_fix
   };
 }
 
