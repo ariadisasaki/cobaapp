@@ -171,6 +171,24 @@ function updateIjtimaRealtime(lat, lon){
   }, 1000);
 }
 
+// ==== CARI PERKIRAAN IJTIMA ===
+function cariPerkiraanIjtima(lat, lon, now){
+  let minDiff = 999;
+  let bestTime = null;
+
+  for(let i = -48; i <= 48; i++){ // ±2 hari tiap 1 jam
+    let t = new Date(now.getTime() + i * 3600 * 1000);
+    let diff = Math.abs(selisihRA(lat, lon, t));
+
+    if(diff < minDiff){
+      minDiff = diff;
+      bestTime = t;
+    }
+  }
+
+  return bestTime;
+}
+
 // ==== DAPATKAN IJTIMA FIX ====
 function getIjtimaFix(lat, lon){
   if(ijtimaCache) return ijtimaCache;
@@ -188,19 +206,35 @@ function getIjtimaFix(lat, lon){
 
 // ==== CARI IJTIMA PRESISI ====
 function cariIjtimaPresisi(lat, lon){
-  let t1 = new Date(nowGlobal.getTime() - 2 * 24 * 3600 * 1000);
-  let t2 = new Date(nowGlobal.getTime() + 2 * 24 * 3600 * 1000);
-  
+
+  // ================= STEP 1: CARI PERKIRAAN DULU =================
+  let minDiff = 999;
+  let center = null;
+
+  for(let i = -48; i <= 48; i++){ // ±2 hari (1 jam step)
+    let t = new Date(nowGlobal.getTime() + i * 3600 * 1000);
+    let diff = Math.abs(selisihRA(lat, lon, t));
+
+    if(diff < minDiff){
+      minDiff = diff;
+      center = t;
+    }
+  }
+
+  // ================= STEP 2: BIKIN RANGE SEMPIT =================
+  let t1 = new Date(center.getTime() - 6 * 3600 * 1000);
+  let t2 = new Date(center.getTime() + 6 * 3600 * 1000);
+
   let f1 = selisihRA(lat, lon, t1);
   let f2 = selisihRA(lat, lon, t2);
 
-  // 🔥 VALIDASI WAJIB
+  // 🔥 VALIDASI ROOT
   if(f1 * f2 > 0){
-    console.warn("Root tidak ditemukan dalam range ini!");
-    return cariIjtimaTerdekat(lat, lon); // fallback
+    console.warn("Root tidak ketemu, pakai pendekatan kasar");
+    return center; // fallback aman (tidak lompat bulan)
   }
 
-  // 🔁 BISECTION
+  // ================= STEP 3: BISECTION =================
   for(let i = 0; i < 30; i++){
     let tMid = new Date((t1.getTime() + t2.getTime()) / 2);
     let fMid = selisihRA(lat, lon, tMid);
@@ -214,6 +248,7 @@ function cariIjtimaPresisi(lat, lon){
     }
   }
 
+  // ================= HASIL FINAL =================
   return new Date((t1.getTime() + t2.getTime()) / 2);
 }
 
