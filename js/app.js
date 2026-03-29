@@ -321,61 +321,88 @@ function getLocation(){
     navigator.geolocation.getCurrentPosition(async p=>{
         const lat = p.coords.latitude;
         const lon = p.coords.longitude;
+
+        // ✅ Simpan ke global
         currentLat = lat;
         currentLon = lon;
 
-        document.getElementById('loc').innerText = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        document.getElementById('loc').innerText =
+            `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 
         try{
-            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+            const r = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+            );
             const d = await r.json();
-            const a = d.address||{};
-            const lokasi = [a.village||a.town||a.city||"", a.county||"", a.state||"", a.country||""].filter(v=>v).join(", ");
+            const a = d.address || {};
+            const lokasi = [
+                a.village || a.town || a.city || "",
+                a.county || "",
+                a.state || "",
+                a.country || ""
+            ].filter(v=>v).join(", ");
+
             document.getElementById('lokasi').innerText = lokasi;
+
         }catch{
-            document.getElementById('lokasi').innerText="Lokasi tidak tersedia";
+            document.getElementById('lokasi').innerText = "Lokasi tidak tersedia";
         }
 
-        // 🔹 Ambil declination global
+        // 🔹 Declination
         await getMagneticDeclination(lat, lon);
 
+        // 🔹 Init utama
         updateHijriRealTime(lat, lon);
         hitungHilal(lat, lon);
         startCam();
         autoReloadAtMaghrib(lat, lon);
 
+        // 🔁 Update hilal tiap 10 detik
         setInterval(()=>{
-            if(currentLat && currentLon){
-                hitungHilal(currentLat, currentLon);
-            }
+            hitungHilal(currentLat, currentLon);
         }, 10 * 1000);
+
+        // 🔁 Update hijri tiap 1 menit
+        setInterval(()=>{
+            updateHijriRealTime(currentLat, currentLon);
+        }, 60 * 1000);
 
     }, ()=>{
-        const lat=-8.5833, lon=116.1167;
-        document.getElementById('loc').innerText=`${lat}, ${lon}`;
-        document.getElementById('lokasi').innerText="Lokasi default";
+        // ================= FALLBACK =================
+        const lat = -8.5833;
+        const lon = 116.1167;
 
-        declinationGlobal = 0; // fallback jika gagal GPS
+        // ✅ WAJIB: set global
+        currentLat = lat;
+        currentLon = lon;
 
+        document.getElementById('loc').innerText = `${lat}, ${lon}`;
+        document.getElementById('lokasi').innerText = "Lokasi default";
+
+        // 🔹 fallback declination
+        declinationGlobal = 0;
+
+        // 🔹 Init utama
         updateHijriRealTime(lat, lon);
         hitungHilal(lat, lon);
         startCam();
         autoReloadAtMaghrib(lat, lon);
 
-        // Update hilal tiap 10 detik
+        // 🔁 Update hilal tiap 10 detik
         setInterval(()=>{
-            if(currentLat && currentLon){
-                hitungHilal(currentLat, currentLon);
-            }
+            hitungHilal(currentLat, currentLon);
         }, 10 * 1000);
-        
-        // Update hijri tiap 1 menit
+
+        // 🔁 Update hijri tiap 1 menit
         setInterval(()=>{
-            if(currentLat && currentLon){
-                updateHijriRealTime(currentLat, currentLon);
-            }
+            updateHijriRealTime(currentLat, currentLon);
         }, 60 * 1000);
-    },{enableHighAccuracy:true});
+
+    }, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+    });
 }
 
 // ================= DELTA TIME =================
