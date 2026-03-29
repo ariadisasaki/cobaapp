@@ -55,9 +55,6 @@ window.onload = () => {
       });
     }
   }, { once:true });
-
-  // ====== UPDATE IJTIMA REALTIME ======
-  updateIjtimaRealtime(defaultLat, defaultLon);
 };
 
 // ================= GET LOCATION =================
@@ -210,20 +207,26 @@ function getIjtimaFix(lat, lon){
 }
 
 // ==== CARI IJTIMA PRESISI ====
-function cariIjtimaPresisi(lat, lon){
+function cariIjtimaPresisi(lat, lon, now){
 
   // ================= STEP 1: CARI PERKIRAAN DULU =================
   let minDiff = 999;
   let center = null;
 
-  for(let i = -48; i <= 48; i++){ // ±2 hari (1 jam step)
-    let t = new Date(nowGlobal.getTime() + i * 3600 * 1000);
+  for(let i = -48; i <= 48; i++){ // ±2 hari (step 1 jam)
+    let t = new Date(now.getTime() + i * 3600 * 1000);
     let diff = Math.abs(selisihRA(lat, lon, t));
 
     if(diff < minDiff){
       minDiff = diff;
       center = t;
     }
+  }
+
+  // 🔥 JAGA-JAGA kalau center null
+  if(!center){
+    console.warn("Center tidak ditemukan");
+    return now;
   }
 
   // ================= STEP 2: BIKIN RANGE SEMPIT =================
@@ -234,15 +237,25 @@ function cariIjtimaPresisi(lat, lon){
   let f2 = selisihRA(lat, lon, t2);
 
   // 🔥 VALIDASI ROOT
+  if(isNaN(f1) || isNaN(f2)){
+    console.warn("Nilai RA invalid");
+    return center;
+  }
+
   if(f1 * f2 > 0){
     console.warn("Root tidak ketemu, pakai pendekatan kasar");
-    return center; // fallback aman (tidak lompat bulan)
+    return center; // fallback aman
   }
 
   // ================= STEP 3: BISECTION =================
   for(let i = 0; i < 30; i++){
     let tMid = new Date((t1.getTime() + t2.getTime()) / 2);
     let fMid = selisihRA(lat, lon, tMid);
+
+    if(isNaN(fMid)){
+      console.warn("fMid NaN, skip");
+      return center;
+    }
 
     if(f1 * fMid < 0){
       t2 = tMid;
