@@ -133,6 +133,12 @@ function updateIjtimaRealtime(lat, lon){
 
   ijtimaInterval = setInterval(()=>{
     const now = new Date();
+    const next = getIjtimaBerikutnya(lat, lon);
+    let diffNext = next - now;
+    
+    const jamNext = Math.floor(diffNext / (1000*60*60));
+    const menitNext = Math.floor((diffNext % (1000*60*60)) / (1000*60));
+    const detikNext = Math.floor((diffNext % (1000*60)) / 1000);
 
     // 🔥 SELALU HITUNG SEJAK MASA LALU
     let diff = now - t;
@@ -179,6 +185,12 @@ function cariIjtimaTerdekat(lat, lon){
   }
   
   return waktuIjtima;
+}
+
+// =============== IJTIMA BERIKUTNYA ===========
+function getIjtimaBerikutnya(lat, lon){
+  const last = getIjtimaTerakhir(lat, lon);
+  return new Date(last.getTime() + 29.530588 * 24 * 3600 * 1000);
 }
 
 // =============== IJTIMA TERAKHIR ===========
