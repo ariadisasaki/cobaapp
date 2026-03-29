@@ -17,6 +17,7 @@ let currentLat = 0;
 let currentLon = 0;
 let lastPathUpdate = 0;
 let declinationGlobal = 0;
+let ijtimaCache = null;
 
 // ====== IJTIMA INTERVAL GLOBAL ======
 let ijtimaInterval = null;
@@ -164,6 +165,20 @@ function updateIjtimaRealtime(lat, lon){
       `⏱ Sejak Ijtima: ${jam}j ${menit}m ${detik}d\n` +
       `⏳ Menuju Ijtima: ${jamNext}j ${menitNext}m ${detikNext}d`;
   }, 1000);
+}
+
+// ==== DAPATKAN IJTIMA FIX ====
+function getIjtimaFix(lat, lon){
+  if(ijtimaCache) return ijtimaCache;
+
+  let t = cariIjtimaPresisi(lat, lon, nowGlobal);
+
+  if(t > nowGlobal){
+    t = new Date(t.getTime() - 29.530588 * 24 * 3600 * 1000);
+  }
+
+  ijtimaCache = t;
+  return t;
 }
 
 // ==== CARI IJTIMA PRESISI ====
