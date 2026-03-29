@@ -17,10 +17,13 @@ let currentLon = 0;
 let lastPathUpdate = 0;
 let declinationGlobal = 0;
 
+// ====== IJTIMA INTERVAL GLOBAL ======
+let ijtimaInterval = null;
+
 // ================= INIT =================
 window.onload = () => {
   startClock();
-  getLocation();
+  getLocation();      // akan update hilal & hijri
   initSensor();
 
   // Tombol Kalibrasi Kompas
@@ -46,20 +49,15 @@ window.onload = () => {
       });
     }
   }, { once:true });
+
+  // ====== UPDATE IJTIMA REALTIME ======
+  // Default dulu, nanti akan diupdate oleh getLocation()
+  const defaultLat = -8.5833;
+  const defaultLon = 116.1167;
+  updateIjtimaRealtime(defaultLat, defaultLon);
 };
 
-// ================= JAM =================
-function startClock(){
-  setInterval(()=>{
-    const now = new Date();
-    const hari = now.toLocaleDateString('id-ID',{weekday:'long'});
-    const tanggal = now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-    const jam = now.toLocaleTimeString('id-ID').replace(/\./g,":");
-    document.getElementById('waktu').innerText = `${hari}, ${tanggal} - ${jam}`;
-  },1000);
-}
-
-// ================= GPS =================
+// ================= GET LOCATION =================
 function getLocation(){
   navigator.geolocation.getCurrentPosition(async p=>{
     const lat = p.coords.latitude;
@@ -71,76 +69,139 @@ function getLocation(){
     document.getElementById('loc').innerText =
       `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 
-    // ================== LOKASI (NON BLOKING) ==================
     fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
-    .then(r=>r.json())
-    .then(d=>{
-      const a = d.address || {};
-      const lokasi = [
-        a.village || a.town || a.city || "",
-        a.county || "",
-        a.state || "",
-        a.country || ""
-      ].filter(v=>v).join(", ");
+      .then(r=>r.json())
+      .then(d=>{
+        const a = d.address || {};
+        const lokasi = [
+          a.village || a.town || a.city || "",
+          a.county || "",
+          a.state || "",
+          a.country || ""
+        ].filter(v=>v).join(", ");
+        document.getElementById('lokasi').innerText = lokasi;
+      })
+      .catch(()=> document.getElementById('lokasi').innerText = "Lokasi tidak tersedia");
 
-      document.getElementById('lokasi').innerText = lokasi;
-    })
-    .catch(()=>{
-      document.getElementById('lokasi').innerText = "Lokasi tidak tersedia";
-    });
-
-    // ================== 🔥 INIT CEPAT (TANPA NUNGGU API) ==================
+    // ====== UPDATE HIJRI & HILAL ======
     updateHijriRealTime(lat, lon);
     hitungHilal(lat, lon);
-    updateIjtimaRealTime(lat, lon);
     startCam();
     autoReloadAtMaghrib(lat, lon);
 
-    // ================== 🔁 INTERVAL ==================
-    setInterval(()=>{
-      hitungHilal(currentLat, currentLon);
-    }, 10000);
+    // ====== INTERVAL HILAL & HIJRI ======
+    setInterval(()=> hitungHilal(currentLat, currentLon), 10000);
+    setInterval(()=> updateHijriRealTime(currentLat, currentLon), 60000);
 
-    setInterval(()=>{
-      updateHijriRealTime(currentLat, currentLon);
-    }, 60000);
+    // ====== IJTIMA ======
+    updateIjtimaRealtime(lat, lon);
 
-    // ================== 🔹 BACKGROUND TASK ==================
-    getMagneticDeclination(lat, lon); // 🌐 jalan belakangan (tidak blocking)
-
+    // ====== DECLINATION (NON-BLOCKING) ======
+    getMagneticDeclination(lat, lon);
   }, ()=>{
-    // ================= FALLBACK =================
+    // fallback lokasi default
     const lat = -8.5833;
     const lon = 116.1167;
-
     currentLat = lat;
     currentLon = lon;
 
     document.getElementById('loc').innerText = `${lat}, ${lon}`;
     document.getElementById('lokasi').innerText = "Lokasi default";
 
-    // 🔥 INIT CEPAT
     updateHijriRealTime(lat, lon);
     hitungHilal(lat, lon);
     startCam();
     autoReloadAtMaghrib(lat, lon);
 
-    // 🔁 INTERVAL
-    setInterval(()=>{
-      hitungHilal(currentLat, currentLon);
-    }, 10000);
-
-    setInterval(()=>{
-      updateHijriRealTime(currentLat, currentLon);
-    }, 60000);
-
-    // 🔹 background
+    updateIjtimaRealtime(lat, lon);
     declinationGlobal = 0;
-  }, {
+  },{
     enableHighAccuracy:true,
     timeout:15000,
     maximumAge:0
   });
+}
+
+// ================= UPDATE IJTIMA REALTIME =================
+function updateIjtimaRealtime(lat, lon){
+  const el = document.getElementById("ijtima");
+  if(!el) return;
+
+  // clear interval lama agar tidak menumpuk
+  if(ijtimaInterval) clearInterval(ijtimaInterval);
+
+  const data = cariIjtima(lat, lon);
+  if(!data.time){
+    el.innerText = "Ijtima tidak ditemukan";
+    return;
+  }
+
+  const t = data.time;
+
+  ijtimaInterval = setInterval(()=>{
+    const now = new Date();
+    let diff = t - now; // selisih ms
+    let statusText = "";
+
+    if(diff > 0){
+      const jam = Math.floor(diff / (1000*60*60));
+      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const detik = Math.floor((diff % (1000*60)) / 1000);
+      statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
+    } else {
+      diff = -diff;
+      const jam = Math.floor(diff / (1000*60*60));
+      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const detik = Math.floor((diff % (1000*60)) / 1000);
+      statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
+    }
+
+    const tanggal = t.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    el.innerText = `🌑 Ijtima: ${tanggal}\n${statusText}`;
+  }, 1000);
+}
+
+// =============== CARI IJTIMA ===============
+function cariIjtima(lat, lon){
+  const now = new Date();
+
+  let minElo = 999;
+  let waktuIjtima = null;
+
+  // 🔍 scan ±1 hari (per 5 menit)
+  for(let i = -144; i <= 144; i++){ // 144 x 10 menit = 24 jam
+    let t = new Date(now.getTime() + i * 10 * 60000);
+
+    let data = hitungHilalCore(lat, lon, t);
+    let elo = data.elo;
+
+    if(elo < minElo){
+      minElo = elo;
+      waktuIjtima = t;
+    }
+  }
+
+  return {
+    time: waktuIjtima,
+    elo: minElo
+  };
+}                  
+
+// ================= JAM =================
+function startClock(){
+  setInterval(()=>{
+    const now = new Date();
+    const hari = now.toLocaleDateString('id-ID',{weekday:'long'});
+    const tanggal = now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    const jam = now.toLocaleTimeString('id-ID').replace(/\./g,":");
+    document.getElementById('waktu').innerText = `${hari}, ${tanggal} - ${jam}`;
+  },1000);
+}
 
 // ================= SENSOR =================
 function initSensor(){
@@ -364,77 +425,6 @@ function hitungHilal(lat, lon, customTime=null){
   }
 
   return data;
-}
-
-// ================= CARI IJTIMA =================
-function cariIjtima(lat, lon){
-  const now = new Date();
-
-  let minElo = 999;
-  let waktuIjtima = null;
-
-  // 🔍 scan ±1 hari (per 5 menit)
-  for(let i = -144; i <= 144; i++){ // 144 x 10 menit = 24 jam
-    let t = new Date(now.getTime() + i * 10 * 60000);
-
-    let data = hitungHilalCore(lat, lon, t);
-    let elo = data.elo;
-
-    if(elo < minElo){
-      minElo = elo;
-      waktuIjtima = t;
-    }
-  }
-
-  return {
-    time: waktuIjtima,
-    elo: minElo
-  };
-}
-
-// ================= UPDATE IJTIMA REAL =================
-function updateIjtimaRealtime(lat, lon){
-  const el = document.getElementById("ijtima");
-  if(!el) return;
-
-  const data = cariIjtima(lat, lon);
-  if(!data.time){
-    el.innerText = "Ijtima tidak ditemukan";
-    return;
-  }
-
-  const t = data.time;
-
-  // update tiap detik
-  setInterval(()=>{
-    const now = new Date();
-    let diff = t - now; // selisih dalam ms
-    let statusText = "";
-    
-    if(diff > 0){
-      // ⏳ HITUNG MUNDUR
-      const jam = Math.floor(diff / (1000*60*60));
-      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const detik = Math.floor((diff % (1000*60)) / 1000);
-      statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
-    } else {
-      // ⏱ HITUNG MAJU
-      diff = -diff;
-      const jam = Math.floor(diff / (1000*60*60));
-      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const detik = Math.floor((diff % (1000*60)) / 1000);
-      statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
-    }
-
-    // tampilkan tanggal ijtima + status
-    const tanggal = t.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-
-    el.innerText = `🌑 Ijtima: ${tanggal}\n${statusText}`;
-  }, 1000);
 }
 
 // ================= JALUR BULAN =================
