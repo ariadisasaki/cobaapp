@@ -129,7 +129,7 @@ function updateIjtimaRealtime(lat, lon){
   if(ijtimaInterval) clearInterval(ijtimaInterval);
 
   // 🔥 hitung SEKALI (biar tidak berat)
-  const t = getIjtimaTerakhir(lat, lon);
+  const t = getIjtimaFix(lat, lon);
   const next = getIjtimaBerikutnya(lat, lon);
 
   ijtimaInterval = setInterval(()=>{
