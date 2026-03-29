@@ -623,7 +623,15 @@ function hitungMatahari(lat, lon){
 
   if(azi < 0) azi += 360;
 
-  return { alt, azi };
+  return {
+    alt, 
+    azi, 
+    elo, 
+    age, 
+    illumination, 
+    sunRA, 
+    moonRA
+  };
 }
 
 // ================= KALIBRASI MATAHARI =================
