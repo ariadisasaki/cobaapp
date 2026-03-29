@@ -49,6 +49,12 @@ window.onload = () => {
       });
     }
   }, { once:true });
+
+  // ====== UPDATE IJTIMA REALTIME ======
+  // Default dulu, nanti akan diupdate oleh getLocation()
+  const defaultLat = -8.5833;
+  const defaultLon = 116.1167;
+  updateIjtimaRealtime(defaultLat, defaultLon);
 };
 
 // ================= GET LOCATION =================
@@ -76,7 +82,6 @@ function getLocation(){
         document.getElementById('lokasi').innerText = lokasi;
       })
       .catch(()=> document.getElementById('lokasi').innerText = "Lokasi tidak tersedia");
-    updateIjtimaRealtime(lat, lon); // panggil setelah koordinat valid
 
     // ====== UPDATE HIJRI & HILAL ======
     updateHijriRealTime(lat, lon);
@@ -117,86 +122,48 @@ function getLocation(){
   });
 }
 
-// ====== SIMPAN IJTIMA ======
-function setIjtimaTerakhir(time){
-  localStorage.setItem("ijtimaTerakhir", new Date(time).toISOString());
-}
-
-// ====== AMBIL IJTIMA ======
-function getIjtimaTerakhir(lat, lon){
-  const stored = localStorage.getItem("ijtimaTerakhir");
-  if(stored) return new Date(stored);
-
-  // 🔹 Jika belum ada, cari otomatis
-  if(lat !== undefined && lon !== undefined){
-    const hasil = cariIjtima(lat, lon);
-    if(hasil.time){
-      setIjtimaTerakhir(hasil.time);
-      return hasil.time;
-    }
-  }
-  return null;
-}
-
-// ================= IJTIMA REALTIME OTOMATIS =================
-function updateIjtimaRealtime(lat, lon) {
+// ================= UPDATE IJTIMA REALTIME =================
+function updateIjtimaRealtime(lat, lon){
   const el = document.getElementById("ijtima");
   if(!el) return;
 
-  // Ambil ijtima terakhir dari localStorage
-  let ijtimaData = JSON.parse(localStorage.getItem("ijtima")) || null;
-  const now = new Date();
+  // clear interval lama agar tidak menumpuk
+  if(ijtimaInterval) clearInterval(ijtimaInterval);
 
-  if(!ijtimaData) {
-    // Kalau belum ada, hitung baru
-    ijtimaData = hitungIjtima(lat, lon, now);
-    localStorage.setItem("ijtima", JSON.stringify(ijtimaData));
-  } else {
-    const ijtimaDate = new Date(ijtimaData.tanggal);
-    if(ijtimaDate < now) {
-      // Kalau ijtima sudah lewat, hitung ijtima berikutnya
-      ijtimaData = hitungIjtima(lat, lon, now);
-      localStorage.setItem("ijtima", JSON.stringify(ijtimaData));
+  const data = cariIjtima(lat, lon);
+  if(!data.time){
+    el.innerText = "Ijtima tidak ditemukan";
+    return;
+  }
+
+  const t = data.time;
+
+  ijtimaInterval = setInterval(()=>{
+    const now = new Date();
+    let diff = t - now; // selisih ms
+    let statusText = "";
+
+    if(diff > 0){
+      const jam = Math.floor(diff / (1000*60*60));
+      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const detik = Math.floor((diff % (1000*60)) / 1000);
+      statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
+    } else {
+      diff = -diff;
+      const jam = Math.floor(diff / (1000*60*60));
+      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+      const detik = Math.floor((diff % (1000*60)) / 1000);
+      statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
     }
-  }
 
-  const ijtimaDate = new Date(ijtimaData.tanggal);
-  let diffMs = ijtimaDate - now; // selisih ms
-  let statusText = "";
+    const tanggal = t.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
 
-  if(diffMs > 0) {
-    // Hitung mundur sebelum ijtima
-    const jam = Math.floor(diffMs / (1000*60*60));
-    const menit = Math.floor((diffMs % (1000*60*60)) / (1000*60));
-    const detik = Math.floor((diffMs % (1000*60)) / 1000);
-    statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
-  } else {
-    // Hitung maju setelah ijtima
-    diffMs = Math.abs(diffMs);
-    const jam = Math.floor(diffMs / (1000*60*60));
-    const menit = Math.floor((diffMs % (1000*60*60)) / (1000*60));
-    const detik = Math.floor((diffMs % (1000*60)) / 1000);
-    statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
-  }
-
-  // Tampilkan di UI
-  el.innerText = `🌑 Ijtima: ${ijtimaDate.toLocaleDateString('id-ID')} ${ijtimaDate.toLocaleTimeString('id-ID')}\n${statusText}`;
-
-  // Update tiap detik
-  setTimeout(()=> updateIjtimaRealtime(lat, lon), 1000);
-}
-
-// ================= HITUNG IJTIMA (dummy, bisa diganti rumus presisi) =================
-function hitungIjtima(lat, lon, tanggal = new Date()) {
-  // Contoh: simulasi ijtima jam 0 UTC hari ini
-  const tgl = new Date(tanggal);
-  tgl.setUTCHours(0,0,0,0);
-
-  // Contoh nilai alt & azimuth, bisa diganti rumus Kemenag/MABIMS
-  const alt = Math.random() * 10 + 1;
-  const azi = Math.random() * 360;
-
-  return { alt, azi, tanggal: tgl.toISOString() };
+    el.innerText = `🌑 Ijtima: ${tanggal}\n${statusText}`;
+  }, 1000);
 }
 
 // =============== CARI IJTIMA ===============
