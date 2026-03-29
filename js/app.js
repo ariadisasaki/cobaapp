@@ -68,40 +68,47 @@ function updateHijriRealTime(lat, lon){
     let tambahHari = 0;
 
     // ================== LOGIKA SETELAH MAGHRIB + BUFFER ==================
+    const saved = localStorage.getItem(key);
     if(jam >= (maghrib + bufferJam)){
-
-        const saved = localStorage.getItem(key);
-
+        
         // ================== 🔒 LOCK ==================
         if(saved !== null){
             tambahHari = parseInt(saved);
             console.log("🔒 Pakai cache Hijri (LOCK):", tambahHari);
-
+        
         } else {
-
+            
             console.log("⏳ Buffer selesai, hitung hilal SEKALI saja");
-
+            
             const hilal = hitungHilal(lat, lon, now);
-
+            
             const bisaRukyat = (
                 hilal.alt >= 3 &&
                 hilal.elo >= 6.4 &&
                 hilal.age >= 8
             );
-
+            
             tambahHari = bisaRukyat ? 1 : 0;
-
-            // 🔒 SIMPAN (LOCK PERMANEN HARI ITU)
+            
+            // 🔒 SIMPAN (LOCK)
             localStorage.setItem(key, tambahHari);
-
+            
             console.log("💾 Simpan keputusan Hijri (LOCK):", tambahHari);
         }
-
+        
     } else {
-        // sebelum buffer selesai → jangan ubah hari
+
+    // ================== SEBELUM BUFFER ==================
+    if(saved !== null){
+        // 🔒 Jika sudah pernah dihitung hari ini → pakai hasil lama
+        tambahHari = parseInt(saved);
+        console.log("🔒 Pakai cache sebelum buffer:", tambahHari);
+    } else {
+        // ⏳ Belum waktunya → tetap hari lama
         tambahHari = 0;
-        console.log("⏳ Menunggu buffer maghrib...");
+        console.log("⏳ Menunggu maghrib + buffer...");
     }
+}
 
     // ================== JULIAN DAY ==================
     const localMidnight = new Date(
