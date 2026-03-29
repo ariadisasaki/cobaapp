@@ -889,9 +889,26 @@ function playBeep(freq=800, duration=100){
 
 // ================= CAMERA =================
 function startCam(){
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
-  .then(s => document.getElementById('cam').srcObject = s)
-  .catch(()=> alert("Izin kamera diperlukan"));
+  const video = document.getElementById('cam');
+
+  if(!video){
+    alert("Elemen video tidak ditemukan");
+    return;
+  }
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'environment' }
+  })
+  .then(stream => {
+    video.srcObject = stream;
+
+    // 🔥 WAJIB agar tampil di beberapa HP
+    video.play();
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Izin kamera diperlukan / tidak tersedia");
+  });
 }
 
 // ================= NOTIF =================
