@@ -416,39 +416,45 @@ function updateIjtima(lat, lon){
   }
 
   const t = data.time;
+  const now = new Date();
+  const diff = t - now;
 
-  // 🔹 format tanggal
+  // 🔹 format tanggal & jam
   const tanggal = t.toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
   });
-
-  // 🔹 format jam
   const jam = t.toLocaleTimeString('id-ID', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   }).replace(/:/g, ".");
 
-  // 🔹 selisih waktu
-  const diff = t - new Date();
-
   let statusText;
+  let countdownText = "";
 
-  if(diff < 0){
-    statusText = "(sudah terjadi)";
-  } else {
-    // ⏳ countdown
+  if(diff > 0){
+    // ⏳ HITUNG MUNDUR
     const sisaJam = Math.floor(diff / (1000*60*60));
     const sisaMenit = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const sisaDetik = Math.floor((diff % (1000*60)) / 1000);
 
-    statusText = `(⏳ ${sisaJam} jam ${sisaMenit} menit lagi)`;
+    statusText = "HITUNG MUNDUR ⏳";
+    countdownText = `${sisaJam} jam ${sisaMenit} menit ${sisaDetik} detik lagi`;
+  } else {
+    // ⏱ HITUNG MAJU
+    const sdhJam = Math.floor(-diff / (1000*60*60));
+    const sdhMenit = Math.floor((-diff % (1000*60*60)) / (1000*60));
+    const sdhDetik = Math.floor((-diff % (1000*60)) / 1000);
+
+    statusText = "HITUNG MAJU ⏱";
+    countdownText = `${sdhJam} jam ${sdhMenit} menit ${sdhDetik} detik sudah lewat`;
   }
 
   el.innerText = `🌑 Ijtima: ${tanggal}
-  Pkl. ${jam}
-  ${statusText}`;
+  ${jam}
+  ${statusText}: ${countdownText}`;
 }
 
 // ================= JALUR BULAN =================
