@@ -15,7 +15,7 @@ body{
 
 /* ===================== CONTAINER (FIX UTAMA) ===================== */
 .container{
-  padding:16px 16px; /* kanan = 16px */
+  padding:10px 16px; /* kanan = 16px */
   transition: padding-left 0.3s ease;
 }
 
@@ -220,18 +220,19 @@ button{
 .sidebar{
   position: fixed;
   top: 0;
-  left: -270px;
+  left: 0;
+  transform: translateX(-100%);
   width: 250px;
   height: 100%;
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(10px);
   padding: 20px;
-  transition: 0.3s ease;
+  transition: transform 0.3s ease;
   z-index: 2001;
 }
 
 .sidebar.active{
-  left: 0;
+  transform: translateX(0);
 }
 
 /* ===================== OVERLAY ===================== */
