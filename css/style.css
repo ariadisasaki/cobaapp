@@ -15,7 +15,7 @@ body{
 
 /* ===================== CONTAINER (FIX UTAMA) ===================== */
 .container{
-  padding:10px 16px; /* kanan = 16px */
+  padding:16px 16px; /* kanan = 16px */
   transition: padding-left 0.3s ease;
 }
 
