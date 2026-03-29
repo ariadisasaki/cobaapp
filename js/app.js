@@ -127,47 +127,40 @@ function updateIjtimaRealtime(lat, lon){
   const el = document.getElementById("ijtima");
   if(!el) return;
 
-  // clear interval lama agar tidak menumpuk
   if(ijtimaInterval) clearInterval(ijtimaInterval);
 
-  const data = cariIjtima(lat, lon);
-  if(!data.time){
-    el.innerText = "Ijtima tidak ditemukan";
-    return;
-  }
-
-  const t = data.time;
+  const t = getIjtimaTerakhir(lat, lon);
 
   ijtimaInterval = setInterval(()=>{
     const now = new Date();
-    let diff = t - now; // selisih ms
-    let statusText = "";
 
-    if(diff > 0){
-      const jam = Math.floor(diff / (1000*60*60));
-      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const detik = Math.floor((diff % (1000*60)) / 1000);
-      statusText = `Hitung Mundur ⏳ ${jam}j ${menit}m ${detik}s`;
-    } else {
-      diff = -diff;
-      const jam = Math.floor(diff / (1000*60*60));
-      const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
-      const detik = Math.floor((diff % (1000*60)) / 1000);
-      statusText = `Hitung Maju ⏱ ${jam}j ${menit}m ${detik}s`;
-    }
+    // 🔥 SELALU HITUNG SEJAK MASA LALU
+    let diff = now - t;
 
-    const tanggal = t.toLocaleDateString('id-ID', {
+    const jam = Math.floor(diff / (1000*60*60));
+    const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const detik = Math.floor((diff % (1000*60)) / 1000);
+
+    // 🔥 TAMPILKAN TANGGAL + JAM
+    const tanggal = t.toLocaleString('id-ID', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
 
-    el.innerText = `🌑 Ijtima: ${tanggal}\n${statusText}`;
+    el.innerText =
+      `🌑 Ijtima: ${tanggal}\n` +
+      `⏱ Sejak Ijtima: ${jam}j ${menit}m ${detik}s`;
+
   }, 1000);
 }
 
 // =============== CARI IJTIMA ===============
 function cariIjtima(lat, lon){
+function cariIjtimaTerdekat(lat, lon){
   const now = new Date();
 
   let minElo = 999;
@@ -184,12 +177,23 @@ function cariIjtima(lat, lon){
       waktuIjtima = t;
     }
   }
+  
+  return waktuIjtima;
+}
 
-  return {
-    time: waktuIjtima,
-    elo: minElo
-  };
-}                  
+// =============== IJTIMA TERAKHIR ===========
+function getIjtimaTerakhir(lat, lon){
+  const now = new Date();
+
+  let t = cariIjtimaTerdekat(lat, lon);
+
+  // 🔥 kalau ternyata di masa depan → mundurkan 1 siklus bulan
+  if(t > now){
+    t = new Date(t.getTime() - 29.530588 * 24 * 3600 * 1000);
+  }
+
+  return t;
+}
 
 // ================= JAM =================
 function startClock(){
