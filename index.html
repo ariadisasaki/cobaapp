@@ -81,6 +81,19 @@
       <button id="startARBtn">▶️ AR & Audio</button>
       <button id="calibrateBtn">🧭 Kalibrasi Kompas</button>
     </div>
+    <!-- ================= SIDEBAR MENU ================= -->
+    <!-- Tombol ☰ -->
+    <div id="menuBtn" class="menu-btn">☰</div>
+    <!-- Overlay -->
+    <div id="overlay" class="overlay"></div>
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar">
+      <h3>🌙 Menu</h3>
+      <button onclick="startCam(); closeMenu()">📷 Aktifkan Kamera</button>
+      <button onclick="calibrateCompass(); closeMenu()">🧭 Kalibrasi Kompas</button>
+      <button onclick="calibrateWithSun(); closeMenu()">☀️ Kalibrasi Matahari</button>
+      <button onclick="location.reload()">🔄 Refresh</button>
+    </div>
 
     <!-- FOOTER -->
     <div class="footer">
