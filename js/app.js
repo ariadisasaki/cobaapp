@@ -90,10 +90,11 @@ function getLocation(){
     });
 
     // ================== 🔥 INIT CEPAT (TANPA NUNGGU API) ==================
-    updateHijriRealTime(lat, lon);   // ⚡ tampil dulu
-    hitungHilal(lat, lon);           // ⚡ tampil dulu
-    startCam();                      // 📷 langsung aktif
-    autoReloadAtMaghrib(lat, lon);   // ⏳ jadwal
+    updateHijriRealTime(lat, lon);
+    hitungHilal(lat, lon);
+    updateIjtima(lat, lon);
+    startCam();
+    autoReloadAtMaghrib(lat, lon);
 
     // ================== 🔁 INTERVAL ==================
     setInterval(()=>{
@@ -103,6 +104,10 @@ function getLocation(){
     setInterval(()=>{
       updateHijriRealTime(currentLat, currentLon);
     }, 60000);
+    
+    setInterval(()=>{
+      updateIjtima(currentLat, currentLon);
+    }, 10 * 60 * 1000);
 
     // ================== 🔹 BACKGROUND TASK ==================
     getMagneticDeclination(lat, lon); // 🌐 jalan belakangan (tidak blocking)
@@ -364,6 +369,61 @@ function hitungHilal(lat, lon, customTime=null){
   }
 
   return data;
+}
+
+// ================= CARI IJTIMA =================
+function cariIjtima(lat, lon){
+  const now = new Date();
+
+  let minElo = 999;
+  let waktuIjtima = null;
+
+  // 🔍 scan ±1 hari (per 5 menit)
+  for(let i = -144; i <= 144; i++){ // 144 x 10 menit = 24 jam
+    let t = new Date(now.getTime() + i * 10 * 60000);
+
+    let data = hitungHilalCore(lat, lon, t);
+    let elo = data.elo;
+
+    if(elo < minElo){
+      minElo = elo;
+      waktuIjtima = t;
+    }
+  }
+
+  return {
+    time: waktuIjtima,
+    elo: minElo
+  };
+}
+
+// ================= UPDATE IJTIMA =================
+function updateIjtima(lat, lon){
+  const el = document.getElementById("ijtima");
+  if(!el) return;
+
+  const data = cariIjtima(lat, lon);
+
+  if(!data.time){
+    el.innerText = "Ijtima tidak ditemukan";
+    return;
+  }
+
+  // 🔥 TAMBAHKAN DI SINI
+  const diff = data.time - new Date();
+
+  const waktu = data.time.toLocaleString('id-ID');
+
+  if(diff < 0){
+    el.innerText = `🌑 Ijtima: ${waktu} (sudah terjadi)`;
+  } else {
+
+    // ⏳ hitung countdown
+    const jam = Math.floor(diff / (1000*60*60));
+    const menit = Math.floor((diff % (1000*60*60)) / (1000*60));
+
+    el.innerText = `🌑 Ijtima: ${waktu} (⏳ ${jam} jam ${menit} menit lagi)`;
+  }
 }
 
 // ================= JALUR BULAN =================
