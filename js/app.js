@@ -890,24 +890,39 @@ function playBeep(freq=800, duration=100){
 // ================= CAMERA =================
 function startCam(){
   const video = document.getElementById('cam');
+  const status = document.getElementById('arStatus');
 
-  if(!video){
-    alert("Elemen video tidak ditemukan");
-    return;
+  if(!video) return;
+
+  // tampilkan status loading
+  if(status){
+    status.innerText = "Mengaktifkan kamera...";
   }
 
   navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'environment' }
+    video: { facingMode: 'environment' },
+    audio: false
   })
   .then(stream => {
     video.srcObject = stream;
 
-    // 🔥 WAJIB agar tampil di beberapa HP
-    video.play();
+    video.onloadedmetadata = () => {
+      video.play();
+
+      // 🔥 update status saat kamera siap
+      if(status){
+        status.innerText = "📷 Kamera aktif";
+      }
+    };
   })
   .catch(err => {
     console.error(err);
-    alert("Izin kamera diperlukan / tidak tersedia");
+
+    if(status){
+      status.innerText = "❌ Kamera gagal";
+    }
+
+    alert("Izin kamera diperlukan");
   });
 }
 
