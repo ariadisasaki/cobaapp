@@ -17,6 +17,160 @@ let currentLon = 0;
 let lastPathUpdate = 0;
 let declinationGlobal = 0;
 
+// ================= INIT =================
+window.onload = () => {
+  startClock();
+  getLocation();
+  initSensor();
+
+  // Tombol Kalibrasi Kompas
+  const calibBtn = document.getElementById("calibrateBtn");
+  if(calibBtn){
+    calibBtn.addEventListener("click", ()=>{
+      calibrateCompass();
+    });
+  }
+
+  // Notifikasi & audio aktif otomatis saat klik pertama
+  document.body.addEventListener("click", () => {
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      console.log("Audio aktif");
+    }
+
+    if(Notification.permission === "default"){
+      Notification.requestPermission().then(p=>{
+        if(p==="granted"){
+          showNotif("Hilal Checker", "Notifikasi aktif 🌙");
+        }
+      });
+    }
+  }, { once:true });
+};
+
+// ================= JAM =================
+function startClock(){
+  setInterval(()=>{
+    const now = new Date();
+    const hari = now.toLocaleDateString('id-ID',{weekday:'long'});
+    const tanggal = now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    const jam = now.toLocaleTimeString('id-ID').replace(/\./g,":");
+    document.getElementById('waktu').innerText = `${hari}, ${tanggal} - ${jam}`;
+  },1000);
+}
+
+// ================= GPS =================
+function getLocation(){
+    navigator.geolocation.getCurrentPosition(async p=>{
+        const lat = p.coords.latitude;
+        const lon = p.coords.longitude;
+
+        // ✅ Simpan ke global
+        currentLat = lat;
+        currentLon = lon;
+
+        document.getElementById('loc').innerText =
+            `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+
+        try{
+            const r = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
+            );
+            const d = await r.json();
+            const a = d.address || {};
+            const lokasi = [
+                a.village || a.town || a.city || "",
+                a.county || "",
+                a.state || "",
+                a.country || ""
+            ].filter(v=>v).join(", ");
+
+            document.getElementById('lokasi').innerText = lokasi;
+
+        }catch{
+            document.getElementById('lokasi').innerText = "Lokasi tidak tersedia";
+        }
+
+        // 🔹 Declination
+        await getMagneticDeclination(lat, lon);
+
+        // 🔹 Init utama
+        updateHijriRealTime(lat, lon);
+        hitungHilal(lat, lon);
+        startCam();
+        autoReloadAtMaghrib(lat, lon);
+
+        // 🔁 Update hilal tiap 10 detik
+        setInterval(()=>{
+            hitungHilal(currentLat, currentLon);
+        }, 10 * 1000);
+
+        // 🔁 Update hijri tiap 1 menit
+        setInterval(()=>{
+            updateHijriRealTime(currentLat, currentLon);
+        }, 60 * 1000);
+
+    }, ()=>{
+        // ================= FALLBACK =================
+        const lat = -8.5833;
+        const lon = 116.1167;
+
+        // ✅ WAJIB: set global
+        currentLat = lat;
+        currentLon = lon;
+
+        document.getElementById('loc').innerText = `${lat}, ${lon}`;
+        document.getElementById('lokasi').innerText = "Lokasi default";
+
+        // 🔹 fallback declination
+        declinationGlobal = 0;
+
+        // 🔹 Init utama
+        updateHijriRealTime(lat, lon);
+        hitungHilal(lat, lon);
+        startCam();
+        autoReloadAtMaghrib(lat, lon);
+
+        // 🔁 Update hilal tiap 10 detik
+        setInterval(()=>{
+            hitungHilal(currentLat, currentLon);
+        }, 10 * 1000);
+
+        // 🔁 Update hijri tiap 1 menit
+        setInterval(()=>{
+            updateHijriRealTime(currentLat, currentLon);
+        }, 60 * 1000);
+
+    }, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+    });
+}
+
+// ================= SENSOR =================
+function initSensor(){
+  let lastAlpha=0, lastBeta=0, lastGamma=0;
+
+  window.addEventListener("deviceorientationabsolute", e=>{
+    let alpha = e.alpha || 0;
+    let beta  = e.beta  || 0;
+    let gamma = e.gamma || 0;
+
+    // 🔹 FILTER biar halus
+    alpha = lastAlpha + (alpha - lastAlpha) * 0.05;
+    beta  = lastBeta  + (beta  - lastBeta)  * 0.05;
+    gamma = lastGamma + (gamma - lastGamma) * 0.05;
+
+    lastAlpha = alpha;
+      window.lastAlpha = alpha;
+    lastBeta  = beta;
+    lastGamma = gamma;
+
+    updateAR(alpha, beta, gamma);
+  });
+}
+
 // ============== DEKLINASI ==============
 async function getMagneticDeclination(lat, lon){
     try {
@@ -153,48 +307,6 @@ function updateHijriRealTime(lat, lon){
         `${d} ${bulan[hijriMonthIndex]} ${y} H`;
 }
 
-// ================= INIT =================
-window.onload = () => {
-  startClock();
-  getLocation();
-  initSensor();
-
-  // Tombol Kalibrasi Kompas
-  const calibBtn = document.getElementById("calibrateBtn");
-  if(calibBtn){
-    calibBtn.addEventListener("click", ()=>{
-      calibrateCompass();
-    });
-  }
-
-  // Notifikasi & audio aktif otomatis saat klik pertama
-  document.body.addEventListener("click", () => {
-    if(!audioCtx){
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      console.log("Audio aktif");
-    }
-
-    if(Notification.permission === "default"){
-      Notification.requestPermission().then(p=>{
-        if(p==="granted"){
-          showNotif("Hilal Checker", "Notifikasi aktif 🌙");
-        }
-      });
-    }
-  }, { once:true });
-};
-
-// ================= JAM =================
-function startClock(){
-  setInterval(()=>{
-    const now = new Date();
-    const hari = now.toLocaleDateString('id-ID',{weekday:'long'});
-    const tanggal = now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
-    const jam = now.toLocaleTimeString('id-ID').replace(/\./g,":");
-    document.getElementById('waktu').innerText = `${hari}, ${tanggal} - ${jam}`;
-  },1000);
-}
-
 // ================= REFRACTION & PARALLAX =================
 function koreksiRefraction(alt){
   if(alt > -1){
@@ -208,201 +320,6 @@ function koreksiParallax(alt){
   const altRad = alt * rad;
   const correction = Math.asin(Math.sin(pi*rad) * Math.cos(altRad));
   return alt - (correction * deg);
-}
-
-// ================= HIJRI =================
-function getHijri(lat, lon){
-  const now = new Date();
-
-  // ================== WAKTU ==================
-  const jam = now.getHours() + now.getMinutes()/60;
-
-  // ================== MAGHRIB ==================
-  const maghribData = hitungMaghrib(lat, lon);
-  const maghrib = maghribData ? maghribData.decimal : 18;
-
-  // ================== TANGGAL DASAR (FIX) ==================
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  // ================== KEY CACHE ==================
-  const key = "hijriStatus_" + today.toDateString();
-
-  // Hapus cache lama
-  Object.keys(localStorage).forEach(k=>{
-    if(k.startsWith("hijriStatus_") && k !== key){
-      localStorage.removeItem(k);
-    }
-  });
-
-  let tambahHari = 0;
-
-  // ================== LOGIKA SETELAH MAGHRIB ==================
-  if(jam >= maghrib){
-
-    // 🔹 Cek apakah sudah ada keputusan tersimpan
-    const saved = localStorage.getItem(key);
-
-    if(saved !== null){
-      tambahHari = parseInt(saved);
-      console.log("🔒 Pakai cache hijri:", tambahHari);
-
-    } else {
-
-      // ================== HITUNG HILAL SAAT MAGHRIB ==================
-      const maghribTime = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        Math.floor(maghrib),
-        Math.floor((maghrib % 1) * 60),
-        0, 0
-      );
-
-      const hilal = hitungHilal(lat, lon, maghribTime);
-
-      console.log("🌙 Hilal saat maghrib:", hilal);
-
-      const bisaRukyat = (
-        hilal.alt >= 3 &&
-        hilal.elo >= 6.4 &&
-        hilal.age >= 8
-      );
-
-      tambahHari = bisaRukyat ? 1 : 0;
-
-      // 🔒 SIMPAN KEPUTUSAN (PENTING!)
-      localStorage.setItem(key, tambahHari);
-
-      console.log("💾 Simpan keputusan hijri:", tambahHari);
-    }
-  }
-    
-    // ================== JULIAN DAY (FIX HARI + ZONA WAKTU AMAN) ==================
-    const localMidnight = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        0, 0, 0, 0
-    );
-    
-    const utcMidnight = localMidnight.getTime() - (localMidnight.getTimezoneOffset() * 60000);
-    
-    let jd = Math.floor((utcMidnight / 86400000) + 2440587.5) + tambahHari;
-
-  // ================== KONVERSI HIJRI ==================
-  let l = jd - 1948440 + 10632;
-  let n = Math.floor((l-1)/10631);
-  l = l - 10631*n + 354;
-  let j = (Math.floor((10985-l)/5316))*(Math.floor((50*l)/17719))
-        +(Math.floor(l/5670))*(Math.floor((43*l)/15238));
-  l = l - (Math.floor((30-j)/15))*(Math.floor((17719*j)/50))
-        - (Math.floor(j/16))*(Math.floor((15238*j)/43)) + 29;
-
-  const m = Math.floor((24*l)/709);
-  const d = l - Math.floor((709*m)/24);
-  const y = 30*n + j - 30;
-
-  // ================== GLOBAL ==================
-  hijriMonthIndex = m - 1;
-  tanggalHijriGlobal = d;
-
-  const bulan = [
-    "Muharram","Safar","Rabiul Awal","Rabiul Akhir",
-    "Jumadil Awal","Jumadil Akhir","Rajab","Syaban",
-    "Ramadhan","Syawal","Zulkaidah","Zulhijjah"
-  ];
-
-  document.getElementById('hijri').innerText =
-    `${d} ${bulan[hijriMonthIndex]} ${y} H`;
-}
-
-// ================= GPS =================
-function getLocation(){
-    navigator.geolocation.getCurrentPosition(async p=>{
-        const lat = p.coords.latitude;
-        const lon = p.coords.longitude;
-
-        // ✅ Simpan ke global
-        currentLat = lat;
-        currentLon = lon;
-
-        document.getElementById('loc').innerText =
-            `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-
-        try{
-            const r = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
-            );
-            const d = await r.json();
-            const a = d.address || {};
-            const lokasi = [
-                a.village || a.town || a.city || "",
-                a.county || "",
-                a.state || "",
-                a.country || ""
-            ].filter(v=>v).join(", ");
-
-            document.getElementById('lokasi').innerText = lokasi;
-
-        }catch{
-            document.getElementById('lokasi').innerText = "Lokasi tidak tersedia";
-        }
-
-        // 🔹 Declination
-        await getMagneticDeclination(lat, lon);
-
-        // 🔹 Init utama
-        updateHijriRealTime(lat, lon);
-        hitungHilal(lat, lon);
-        startCam();
-        autoReloadAtMaghrib(lat, lon);
-
-        // 🔁 Update hilal tiap 10 detik
-        setInterval(()=>{
-            hitungHilal(currentLat, currentLon);
-        }, 10 * 1000);
-
-        // 🔁 Update hijri tiap 1 menit
-        setInterval(()=>{
-            updateHijriRealTime(currentLat, currentLon);
-        }, 60 * 1000);
-
-    }, ()=>{
-        // ================= FALLBACK =================
-        const lat = -8.5833;
-        const lon = 116.1167;
-
-        // ✅ WAJIB: set global
-        currentLat = lat;
-        currentLon = lon;
-
-        document.getElementById('loc').innerText = `${lat}, ${lon}`;
-        document.getElementById('lokasi').innerText = "Lokasi default";
-
-        // 🔹 fallback declination
-        declinationGlobal = 0;
-
-        // 🔹 Init utama
-        updateHijriRealTime(lat, lon);
-        hitungHilal(lat, lon);
-        startCam();
-        autoReloadAtMaghrib(lat, lon);
-
-        // 🔁 Update hilal tiap 10 detik
-        setInterval(()=>{
-            hitungHilal(currentLat, currentLon);
-        }, 10 * 1000);
-
-        // 🔁 Update hijri tiap 1 menit
-        setInterval(()=>{
-            updateHijriRealTime(currentLat, currentLon);
-        }, 60 * 1000);
-
-    }, {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
-    });
 }
 
 // ================= DELTA TIME =================
@@ -725,29 +642,6 @@ function autoReloadAtMaghrib(lat, lon){
     updateHijriRealTime(lat, lon); // 🔥 update tanpa reload
   
   }, diff);
-}
-
-// ================= SENSOR =================
-function initSensor(){
-  let lastAlpha=0, lastBeta=0, lastGamma=0;
-
-  window.addEventListener("deviceorientationabsolute", e=>{
-    let alpha = e.alpha || 0;
-    let beta  = e.beta  || 0;
-    let gamma = e.gamma || 0;
-
-    // 🔹 FILTER biar halus
-    alpha = lastAlpha + (alpha - lastAlpha) * 0.05;
-    beta  = lastBeta  + (beta  - lastBeta)  * 0.05;
-    gamma = lastGamma + (gamma - lastGamma) * 0.05;
-
-    lastAlpha = alpha;
-      window.lastAlpha = alpha;
-    lastBeta  = beta;
-    lastGamma = gamma;
-
-    updateAR(alpha, beta, gamma);
-  });
 }
 
 // ================= AR =================
