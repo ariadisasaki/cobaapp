@@ -13,8 +13,7 @@ body{
   padding:10px 0;
 }
 .container{
-  padding:5px;
-  padding-left:clamp(50px, 8vw, 70px);
+  padding:10px 10px 10px 10px; /* top right bottom left */
 }
 
 /* ===================== CARD ===================== */
