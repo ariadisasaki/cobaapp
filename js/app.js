@@ -204,6 +204,14 @@ function getIjtimaBerikutnya(lat, lon){
   return new Date(last.getTime() + 29.530588 * 24 * 3600 * 1000);
 }
 
+// ======= SELISIH RA =======
+function selisihRA(lat, lon, time){
+  const data = hitungHilalCore(lat, lon, time);
+
+  // RA Matahari & Bulan harus kamu ambil dari core
+  return data.sunRA - data.moonRA;
+}
+
 // ================= JAM =================
 function startClock(){
   setInterval(()=>{
