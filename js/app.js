@@ -67,20 +67,32 @@ function updateHijriRealTime(lat, lon){
 
     let tambahHari = 0;
 
-    // ================== LOGIKA SETELAH MAGHRIB + BUFFER ==================
+    // ================== LOGIKA FINAL ==================
     const saved = localStorage.getItem(key);
-    if(jam >= (maghrib + bufferJam)){
+    
+    // 🔒 PRIORITAS UTAMA: kalau sudah ada cache → pakai terus
+    if(saved !== null){
+        tambahHari = parseInt(saved);
+        console.log("🔒 LOCK AKTIF (pakai cache):", tambahHari);
+    
+    } else {
         
-        // ================== 🔒 LOCK ==================
-        if(saved !== null){
-            tambahHari = parseInt(saved);
-            console.log("🔒 Pakai cache Hijri (LOCK):", tambahHari);
-        
-        } else {
+        // ⏳ BELUM ADA KEPUTUSAN → tunggu maghrib + buffer
+        if(jam >= (maghrib + bufferJam)){
+
+            console.log("⏳ Buffer selesai → hitung SEKALI pakai waktu maghrib");
             
-            console.log("⏳ Buffer selesai, hitung hilal SEKALI saja");
+            // 🔥 PENTING: pakai waktu MAGHRIB (bukan now)
+            const maghribTime = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+                Math.floor(maghrib),
+                Math.floor((maghrib % 1) * 60),
+                0, 0
+            );
             
-            const hilal = hitungHilal(lat, lon, now);
+            const hilal = hitungHilal(lat, lon, maghribTime);
             
             const bisaRukyat = (
                 hilal.alt >= 3 &&
@@ -90,25 +102,18 @@ function updateHijriRealTime(lat, lon){
             
             tambahHari = bisaRukyat ? 1 : 0;
             
-            // 🔒 SIMPAN (LOCK)
+            // 🔒 SIMPAN (LOCK SEHARI PENUH)
             localStorage.setItem(key, tambahHari);
             
-            console.log("💾 Simpan keputusan Hijri (LOCK):", tambahHari);
-        }
+            console.log("💾 Simpan keputusan FINAL:", tambahHari);
         
-    } else {
-
-    // ================== SEBELUM BUFFER ==================
-    if(saved !== null){
-        // 🔒 Jika sudah pernah dihitung hari ini → pakai hasil lama
-        tambahHari = parseInt(saved);
-        console.log("🔒 Pakai cache sebelum buffer:", tambahHari);
-    } else {
-        // ⏳ Belum waktunya → tetap hari lama
-        tambahHari = 0;
-        console.log("⏳ Menunggu maghrib + buffer...");
+        } else {
+            
+            // ⏳ sebelum maghrib + buffer → tetap hari lama
+            tambahHari = 0;
+            console.log("⏳ Menunggu maghrib + buffer...");
+        }
     }
-}
 
     // ================== JULIAN DAY ==================
     const localMidnight = new Date(
