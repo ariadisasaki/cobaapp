@@ -61,91 +61,85 @@ function startClock(){
 
 // ================= GPS =================
 function getLocation(){
-    navigator.geolocation.getCurrentPosition(async p=>{
-        const lat = p.coords.latitude;
-        const lon = p.coords.longitude;
+  navigator.geolocation.getCurrentPosition(async p=>{
+    const lat = p.coords.latitude;
+    const lon = p.coords.longitude;
 
-        // ✅ Simpan ke global
-        currentLat = lat;
-        currentLon = lon;
+    currentLat = lat;
+    currentLon = lon;
 
-        document.getElementById('loc').innerText =
-            `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+    document.getElementById('loc').innerText =
+      `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 
-        try{
-            const r = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
-            );
-            const d = await r.json();
-            const a = d.address || {};
-            const lokasi = [
-                a.village || a.town || a.city || "",
-                a.county || "",
-                a.state || "",
-                a.country || ""
-            ].filter(v=>v).join(", ");
+    // ================== LOKASI (NON BLOKING) ==================
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+    .then(r=>r.json())
+    .then(d=>{
+      const a = d.address || {};
+      const lokasi = [
+        a.village || a.town || a.city || "",
+        a.county || "",
+        a.state || "",
+        a.country || ""
+      ].filter(v=>v).join(", ");
 
-            document.getElementById('lokasi').innerText = lokasi;
-
-        }catch{
-            document.getElementById('lokasi').innerText = "Lokasi tidak tersedia";
-        }
-
-        // 🔹 Declination
-        await getMagneticDeclination(lat, lon);
-
-        // 🔹 Init utama
-        updateHijriRealTime(lat, lon);
-        hitungHilal(lat, lon);
-        startCam();
-        autoReloadAtMaghrib(lat, lon);
-
-        // 🔁 Update hilal tiap 10 detik
-        setInterval(()=>{
-            hitungHilal(currentLat, currentLon);
-        }, 10 * 1000);
-
-        // 🔁 Update hijri tiap 1 menit
-        setInterval(()=>{
-            updateHijriRealTime(currentLat, currentLon);
-        }, 60 * 1000);
-
-    }, ()=>{
-        // ================= FALLBACK =================
-        const lat = -8.5833;
-        const lon = 116.1167;
-
-        // ✅ WAJIB: set global
-        currentLat = lat;
-        currentLon = lon;
-
-        document.getElementById('loc').innerText = `${lat}, ${lon}`;
-        document.getElementById('lokasi').innerText = "Lokasi default";
-
-        // 🔹 fallback declination
-        declinationGlobal = 0;
-
-        // 🔹 Init utama
-        updateHijriRealTime(lat, lon);
-        hitungHilal(lat, lon);
-        startCam();
-        autoReloadAtMaghrib(lat, lon);
-
-        // 🔁 Update hilal tiap 10 detik
-        setInterval(()=>{
-            hitungHilal(currentLat, currentLon);
-        }, 10 * 1000);
-
-        // 🔁 Update hijri tiap 1 menit
-        setInterval(()=>{
-            updateHijriRealTime(currentLat, currentLon);
-        }, 60 * 1000);
-
-    }, {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0
+      document.getElementById('lokasi').innerText = lokasi;
+    })
+    .catch(()=>{
+      document.getElementById('lokasi').innerText = "Lokasi tidak tersedia";
     });
+
+    // ================== 🔥 INIT CEPAT (TANPA NUNGGU API) ==================
+    updateHijriRealTime(lat, lon);   // ⚡ tampil dulu
+    hitungHilal(lat, lon);           // ⚡ tampil dulu
+    startCam();                      // 📷 langsung aktif
+    autoReloadAtMaghrib(lat, lon);   // ⏳ jadwal
+
+    // ================== 🔁 INTERVAL ==================
+    setInterval(()=>{
+      hitungHilal(currentLat, currentLon);
+    }, 10000);
+
+    setInterval(()=>{
+      updateHijriRealTime(currentLat, currentLon);
+    }, 60000);
+
+    // ================== 🔹 BACKGROUND TASK ==================
+    getMagneticDeclination(lat, lon); // 🌐 jalan belakangan (tidak blocking)
+
+  }, ()=>{
+    // ================= FALLBACK =================
+    const lat = -8.5833;
+    const lon = 116.1167;
+
+    currentLat = lat;
+    currentLon = lon;
+
+    document.getElementById('loc').innerText = `${lat}, ${lon}`;
+    document.getElementById('lokasi').innerText = "Lokasi default";
+
+    // 🔥 INIT CEPAT
+    updateHijriRealTime(lat, lon);
+    hitungHilal(lat, lon);
+    startCam();
+    autoReloadAtMaghrib(lat, lon);
+
+    // 🔁 INTERVAL
+    setInterval(()=>{
+      hitungHilal(currentLat, currentLon);
+    }, 10000);
+
+    setInterval(()=>{
+      updateHijriRealTime(currentLat, currentLon);
+    }, 60000);
+
+    // 🔹 background
+    declinationGlobal = 0;
+  }, {
+    enableHighAccuracy:true,
+    timeout:15000,
+    maximumAge:0
+  });
 }
 
 // ================= SENSOR =================
