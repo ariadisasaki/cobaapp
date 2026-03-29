@@ -2,6 +2,7 @@
 console.log("FINAL ULTRA COMPLETE - HILAL CHECKER");
 
 // ================= GLOBAL =================
+const nowGlobal = new Date();
 let hijriMonthIndex = 0;
 let tanggalHijriGlobal = 0;
 let hilalData = { alt: 0, azi: 0 };
@@ -165,11 +166,11 @@ function updateIjtimaRealtime(lat, lon){
   }, 1000);
 }
 
-// ==== IJTIMA PRESISI ====
+// ==== CARI IJTIMA PRESISI ====
 function cariIjtimaPresisi(lat, lon){
-  let t1 = new Date(Date.now() - 2 * 24 * 3600 * 1000);
-  let t2 = new Date(Date.now() + 2 * 24 * 3600 * 1000);
-
+  let t1 = new Date(nowGlobal.getTime() - 2 * 24 * 3600 * 1000);
+  let t2 = new Date(nowGlobal.getTime() + 2 * 24 * 3600 * 1000);
+  
   let f1 = selisihRA(lat, lon, t1);
   let f2 = selisihRA(lat, lon, t2);
 
@@ -218,7 +219,7 @@ function cariIjtimaTerdekat(lat, lon){
 
 // =============== IJTIMA TERAKHIR ===========
 function getIjtimaTerakhir(lat, lon){
-  const now = new Date();
+  const now = nowGlobal;
 
   let t = cariIjtimaPresisi(lat, lon);
 
@@ -239,8 +240,13 @@ function getIjtimaBerikutnya(lat, lon){
 function selisihRA(lat, lon, time){
   const data = hitungHilalCore(lat, lon, time);
 
-  // RA Matahari & Bulan harus kamu ambil dari core
-  return data.sunRA - data.moonRA;
+  let diff = data.sunRA - data.moonRA;
+
+  // 🔥 NORMALISASI KE -180 s/d +180
+  if(diff > 180) diff -= 360;
+  if(diff < -180) diff += 360;
+
+  return diff;
 }
 
 // ================= JAM =================
