@@ -14,8 +14,7 @@ body{
 }
 .container{
   padding:10px;
-  margin-left:50px;
-  margin-right:50px;
+  padding-left:clamp(55px, 12vw, 70px);
 }
 
 /* ===================== CARD ===================== */
