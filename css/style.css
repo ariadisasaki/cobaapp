@@ -227,11 +227,6 @@ button{
   flex-direction:column;
 }
 
-/* dorong konten ke bawah */
-.sidebar-bottom{
-  margin-top:auto;
-}
-
 /* ===================== OVERLAY ===================== */
 .overlay{
   position: fixed;
